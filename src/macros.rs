@@ -1,6 +1,9 @@
 #[macro_export]
 macro_rules! id_type {
 ($type_name:ident) => {
+    use std::hash::Hash;
+    use crate::entities::Generation;
+
     #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
     pub struct $type_name(u32, Generation);
 

@@ -114,6 +114,10 @@ impl<'a, ID: IdType> VerifiedEntity<'a, ID> {
     pub fn assert_valid(entity: ID) -> Self {
         VerifiedEntity { entity, marker: PhantomData }
     }
+
+    pub fn index(&self) -> usize {
+        self.entity.index()
+    }
 }
 
 #[cfg(test)]
