@@ -23,3 +23,10 @@ pub trait Get<ID: IdType, T> {
 pub trait Insert<ID: IdType, T> {
     fn insert(&mut self, id: &VerifiedEntity<ID>, value: T);
 }
+
+pub trait Link<A: IdType, B: IdType> : Insert<A, B> + Insert<B, A> {
+    fn link(&mut self, a: &VerifiedEntity<A>, b: &VerifiedEntity<B>) {
+        self.insert(a, b.entity);
+        self.insert(b, a.entity);
+    }
+}

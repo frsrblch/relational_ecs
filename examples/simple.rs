@@ -1,4 +1,5 @@
 use relational_ecs::prelude::*;
+use relational_ecs::id_type;
 
 id_type!(SheepId);
 id_type!(CrookId);
@@ -27,6 +28,20 @@ pub struct State {
     pub sheep_position: IndexedVec<SheepId, Position>,
     pub sheep_shepherd: IndexedVec<SheepId, ShepherdId>,
 }
+
+impl Insert<SheepId, ShepherdId> for State {
+    fn insert(&mut self, id: &VerifiedEntity<SheepId>, value: ShepherdId) {
+        self.sheep_shepherd.insert(id, value);
+    }
+}
+
+impl Insert<ShepherdId, SheepId> for State {
+    fn insert(&mut self, id: &VerifiedEntity<ShepherdId>, value: SheepId) {
+        self.shepherd_sheep.get_mut(id).unwrap().push(value);
+    }
+}
+
+impl Link<ShepherdId, SheepId> for State {}
 
 #[derive(Debug, Default)]
 pub struct Entities {
@@ -76,23 +91,23 @@ impl State {
     }
 }
 
-pub struct Shepherd {
-    name: String,
-    sheep: Vec<Position>,
+pub struct Flock {
+    shepherd: String,
     crook: Length,
+    sheep: Vec<Position>,
 }
 
-impl Shepherd {
+impl Flock {
     pub fn create(self, state: &mut State, entities: &mut Entities) -> ShepherdId {
-        let shepherd = state.create_shepherd(&self.name, &mut entities.shepherds);
+        let shepherd = state.create_shepherd(&self.shepherd, &mut entities.shepherds);
         let crook = state.create_crook(self.crook, &mut entities.crooks);
 
         state.shepherd_crook.insert(&shepherd, crook.entity);
 
         for position in self.sheep.iter() {
             let sheep = state.create_sheep(*position, &mut entities.sheep);
-            state.sheep_shepherd.insert(&sheep, shepherd.entity);
-            state.shepherd_sheep.get_mut(&shepherd).unwrap().push(sheep.entity);
+
+            state.link(&shepherd, &sheep);
         }
 
         shepherd.entity
@@ -102,10 +117,10 @@ impl Shepherd {
 fn main() {
     let mut game = Game::default();
 
-    let shepherd = Shepherd {
-        name: String::from("Little Bo-Peep"),
-        sheep: vec![Position(0.0, 0.0), Position(1.0, 0.0), Position(0.0, 1.0), Position(1.0, 1.0)],
+    let shepherd = Flock {
+        shepherd: String::from("Little Bo-Peep"),
         crook: Length(1.25),
+        sheep: vec![Position(0.0, 0.0), Position(1.0, 0.0), Position(0.0, 1.0), Position(1.0, 1.0)],
     };
 
     let shepherd = shepherd.create(&mut game.state, &mut game.entities);
