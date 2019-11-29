@@ -48,6 +48,8 @@ pub struct State {
     pub sheep_position: IndexedVec<SheepId, Position>,
     pub sheep_wool: IndexedVec<SheepId, Wool>,
     pub sheep_shepherd: IndexedVec<SheepId, ShepherdId>,
+
+    pub lost_sheep: Vec<SheepId>,
 }
 
 impl Insert<ShepherdId, ShepherdRow> for State {
@@ -108,7 +110,7 @@ pub struct Entities {
 
 impl State {
     pub fn lose_distant_sheep(&mut self, entities: &mut Entities) {
-        let mut lost_sheep = Vec::new();
+        self.lost_sheep.clear();
 
         for shepherd in entities.shepherds.ids() {
             let crook = self.shepherd_crook[&shepherd];
@@ -120,15 +122,16 @@ impl State {
                 if let Some(sheep) = entities.sheep.verify(*sheep) {
                     let distance = self.sheep_position[&sheep];
                     if distance.magnitude() > length.0 {
-                        lost_sheep.push(sheep.entity);
+                        self.lost_sheep.push(sheep.entity);
                     }
                 }
             }
         }
 
-        for sheep in lost_sheep {
+        for &sheep in self.lost_sheep.iter() {
             let shepherd = self.sheep_shepherd[&VerifiedEntity::assert_valid(sheep)];
-            self.remove(&VerifiedEntity::assert_valid(shepherd), sheep);
+            let shepherds_sheep = &mut self.shepherd_sheep[&VerifiedEntity::assert_valid(shepherd)];
+            shepherds_sheep.remove(&sheep);
             entities.sheep.kill(sheep);
         }
     }
