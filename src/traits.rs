@@ -30,3 +30,7 @@ pub trait Link<A: IdType, B: IdType> : Insert<A, B> + Insert<B, A> {
         self.insert(b, a.entity);
     }
 }
+
+pub trait Remove<ID: IdType, T> {
+    fn remove(&mut self, id: &VerifiedEntity<ID>, value: T) -> Option<T>;
+}

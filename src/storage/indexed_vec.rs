@@ -1,6 +1,5 @@
 use std::marker::PhantomData;
-use crate::traits::*;
-use crate::entities::VerifiedEntity;
+use super::*;
 
 #[derive(Debug)]
 pub struct IndexedVec<ID, T> {

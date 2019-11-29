@@ -21,7 +21,7 @@ pub struct Game {
 pub struct State {
     pub shepherd_name: IndexedVec<ShepherdId, String>,
     pub shepherd_crook: IndexedVec<ShepherdId, CrookId>,
-    pub shepherd_sheep: IndexedVec<ShepherdId, Vec<SheepId>>,
+    pub shepherd_sheep: IndexedVec<ShepherdId, EntitySet<SheepId>>,
 
     pub crook_length: IndexedVec<CrookId, Length>,
 
@@ -37,7 +37,13 @@ impl Insert<SheepId, ShepherdId> for State {
 
 impl Insert<ShepherdId, SheepId> for State {
     fn insert(&mut self, id: &VerifiedEntity<ShepherdId>, value: SheepId) {
-        self.shepherd_sheep.get_mut(id).unwrap().push(value);
+        self.shepherd_sheep.get_mut(id).unwrap().insert(value);
+    }
+}
+
+impl Remove<ShepherdId, SheepId> for State {
+    fn remove(&mut self, id: &VerifiedEntity<ShepherdId>, value: SheepId) -> Option<SheepId> {
+        self.shepherd_sheep.get_mut(id).unwrap().remove(&value)
     }
 }
 
@@ -55,7 +61,7 @@ impl State {
         let id = shepherds.create_entity();
 
         self.shepherd_name.insert(&id, String::from(name));
-        self.shepherd_sheep.insert(&id, vec![]);
+        self.shepherd_sheep.insert(&id, EntitySet::new());
 
         id
     }
@@ -86,6 +92,25 @@ impl State {
         shepherds_sheep.clear();
     }
 
+    pub fn lose_even_sheep(&mut self, id: &VerifiedEntity<ShepherdId>, sheep: &mut Allocator<SheepId>) {
+        let shepherds_sheep = self.shepherd_sheep.get_mut(id).unwrap();
+
+        let sheep_to_remove = shepherds_sheep.iter()
+            .copied()
+            .enumerate()
+            .filter_map(|(i, s)| if i % 2 == 0 {
+                Some(s)
+            } else {
+                None
+            })
+            .collect::<Vec<_>>();
+
+        for s in sheep_to_remove.iter() {
+            shepherds_sheep.remove(s);
+            sheep.kill(*s);
+        }
+    }
+
     pub fn count_sheep(&self, id: &VerifiedEntity<ShepherdId>) -> usize {
         self.shepherd_sheep.get(id).unwrap().len()
     }
@@ -100,13 +125,12 @@ pub struct Flock {
 impl Flock {
     pub fn create(self, state: &mut State, entities: &mut Entities) -> ShepherdId {
         let shepherd = state.create_shepherd(&self.shepherd, &mut entities.shepherds);
-        let crook = state.create_crook(self.crook, &mut entities.crooks);
 
+        let crook = state.create_crook(self.crook, &mut entities.crooks);
         state.shepherd_crook.insert(&shepherd, crook.entity);
 
         for position in self.sheep.iter() {
             let sheep = state.create_sheep(*position, &mut entities.sheep);
-
             state.link(&shepherd, &sheep);
         }
 
@@ -127,8 +151,10 @@ fn main() {
     let little_bo_peep = game.entities.shepherds.verify(shepherd).unwrap();
 
     assert_eq!(4, game.state.count_sheep(&little_bo_peep));
+    assert_eq!(4, game.entities.sheep.ids().collect::<Vec<_>>().len());
 
-    game.state.lose_all_sheep(&little_bo_peep, &mut game.entities.sheep);
+    game.state.lose_even_sheep(&little_bo_peep, &mut game.entities.sheep);
 
-    assert_eq!(0, game.state.count_sheep(&little_bo_peep));
+    assert_eq!(2, game.state.count_sheep(&little_bo_peep));
+    assert_eq!(2, game.entities.sheep.ids().collect::<Vec<_>>().len());
 }
