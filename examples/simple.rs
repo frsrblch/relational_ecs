@@ -18,11 +18,23 @@ impl Position {
 #[derive(Debug, Default, PartialEq, Copy, Clone)]
 pub struct Length(f32);
 
+#[derive(Debug, Default, PartialEq, Copy, Clone)]
+pub struct Wool(f32);
+
 #[derive(Debug, Default)]
 pub struct Game {
     pub state: State,
     pub entities: Entities,
 }
+
+type ShepherdRow = String;
+
+type SheepRow = (Position, Wool);
+
+#[derive(Debug)]
+pub enum Material { Wood, Metal }
+
+type CrookRow = (Length, Material);
 
 #[derive(Debug, Default)]
 pub struct State {
@@ -31,16 +43,45 @@ pub struct State {
     pub shepherd_sheep: IndexedVec<ShepherdId, EntitySet<SheepId>>,
 
     pub crook_length: IndexedVec<CrookId, Length>,
+    pub crook_material: IndexedVec<CrookId, Material>,
 
     pub sheep_position: IndexedVec<SheepId, Position>,
+    pub sheep_wool: IndexedVec<SheepId, Wool>,
     pub sheep_shepherd: IndexedVec<SheepId, ShepherdId>,
 }
+
+impl Insert<ShepherdId, ShepherdRow> for State {
+    fn insert(&mut self, id: &VerifiedEntity<ShepherdId>, value: String) {
+        self.shepherd_name.insert(id, value);
+        self.shepherd_sheep.insert(id, EntitySet::new());
+    }
+}
+
+impl<'a> Create<'a, ShepherdId, ShepherdRow> for State {}
+
+impl Insert<CrookId, CrookRow> for State {
+    fn insert(&mut self, id: &VerifiedEntity<CrookId>, value: (Length, Material)) {
+        self.crook_length.insert(id, value.0);
+        self.crook_material.insert(id, value.1);
+    }
+}
+
+impl<'a> Create<'a, CrookId, CrookRow> for State {}
 
 impl Insert<SheepId, ShepherdId> for State {
     fn insert(&mut self, id: &VerifiedEntity<SheepId>, value: ShepherdId) {
         self.sheep_shepherd.insert(id, value);
     }
 }
+
+impl Insert<SheepId, SheepRow> for State {
+    fn insert(&mut self, id: &VerifiedEntity<SheepId>, value: (Position, Wool)) {
+        self.sheep_position.insert(id, value.0);
+        self.sheep_wool.insert(id, value.1);
+    }
+}
+
+impl<'a> Create<'a, SheepId, SheepRow> for State {}
 
 impl Insert<ShepherdId, SheepId> for State {
     fn insert(&mut self, id: &VerifiedEntity<ShepherdId>, value: SheepId) {
@@ -66,31 +107,6 @@ pub struct Entities {
 }
 
 impl State {
-    pub fn create_shepherd<'a>(&mut self, name: &str, shepherds: &'a mut Allocator<ShepherdId>) -> VerifiedEntity<'a, ShepherdId> {
-        let id = shepherds.create_entity();
-
-        self.shepherd_name.insert(&id, String::from(name));
-        self.shepherd_sheep.insert(&id, EntitySet::new());
-
-        id
-    }
-
-    pub fn create_sheep<'a>(&mut self, position: Position, sheep: &'a mut Allocator<SheepId>) -> VerifiedEntity<'a, SheepId> {
-        let id = sheep.create_entity();
-
-        self.sheep_position.insert(&id, position);
-
-        id
-    }
-
-    pub fn create_crook<'a>(&mut self, length: Length, crooks: &'a mut Allocator<CrookId>) -> VerifiedEntity<'a, CrookId> {
-        let id = crooks.create_entity();
-
-        self.crook_length.insert(&id, length);
-
-        id
-    }
-
     pub fn lose_distant_sheep(&mut self, entities: &mut Entities) {
         let mut lost_sheep = Vec::new();
 
@@ -124,19 +140,19 @@ impl State {
 
 pub struct Flock {
     shepherd: String,
-    crook: Length,
-    sheep: Vec<Position>,
+    crook: CrookRow,
+    sheep: Vec<SheepRow>,
 }
 
 impl Flock {
     pub fn create(self, state: &mut State, entities: &mut Entities) -> ShepherdId {
-        let shepherd = state.create_shepherd(&self.shepherd, &mut entities.shepherds);
+        let shepherd = state.create(self.shepherd, &mut entities.shepherds);
 
-        let crook = state.create_crook(self.crook, &mut entities.crooks);
+        let crook = state.create(self.crook, &mut entities.crooks);
         state.shepherd_crook.insert(&shepherd, crook.entity);
 
-        for position in self.sheep.iter() {
-            let sheep = state.create_sheep(*position, &mut entities.sheep);
+        for row in self.sheep.into_iter() {
+            let sheep = state.create(row, &mut entities.sheep);
             state.link(&shepherd, &sheep);
         }
 
@@ -149,8 +165,13 @@ fn main() {
 
     let shepherd = Flock {
         shepherd: String::from("Little Bo-Peep"),
-        crook: Length(1.25),
-        sheep: vec![Position(0.0, 0.0), Position(1.0, 0.0), Position(0.0, 1.0), Position(1.0, 1.0)],
+        crook: (Length(1.25), Material::Wood),
+        sheep: vec![
+            (Position(0.0, 0.0), Wool(0.2)),
+            (Position(1.0, 0.0), Wool(1.2)),
+            (Position(0.0, 1.0), Wool(0.8)),
+            (Position(1.0, 1.0), Wool(1.8))
+        ]
     };
 
     let shepherd = shepherd.create(&mut game.state, &mut game.entities);
