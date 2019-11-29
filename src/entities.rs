@@ -90,7 +90,7 @@ impl<ID: IdType> Allocator<ID> {
 
     pub fn ids(&self) -> impl Iterator<Item = VerifiedEntity<ID>> {
         self.live.iter().map(move |index| {
-            let gen = self.generations[index].clone();
+            let gen = self.generations[index];
             VerifiedEntity::assert_valid(ID::create(index, gen))
         })
     }
