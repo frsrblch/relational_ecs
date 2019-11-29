@@ -8,6 +8,13 @@ id_type!(ShepherdId);
 #[derive(Debug, Default, PartialEq, Copy, Clone)]
 pub struct Position(f32, f32);
 
+impl Position {
+    pub fn magnitude(&self) -> f32 {
+        let magnitude_squared = self.0.powi(2) + self.1.powi(2);
+        magnitude_squared.sqrt()
+    }
+}
+
 #[derive(Debug, Default, PartialEq, Copy, Clone)]
 pub struct Length(f32);
 
@@ -111,6 +118,34 @@ impl State {
         }
     }
 
+    pub fn lose_distant_sheep(&mut self, entities: &mut Entities) {
+        let mut lost_sheep = Vec::new();
+
+        for shepherd in entities.shepherds.ids() {
+            let crook = self.shepherd_crook
+                .get(&shepherd)
+                .and_then(|c| entities.crooks.verify(*c))
+                .unwrap();
+
+            let length = self.crook_length.get(&crook).unwrap();
+
+            for sheep in self.shepherd_sheep.get(&shepherd).unwrap().iter() {
+                if let Some(sheep) = entities.sheep.verify(*sheep) {
+                    let distance = self.sheep_position.get(&sheep).unwrap();
+                    if distance.magnitude() > length.0 {
+                        lost_sheep.push(sheep.entity);
+                    }
+                }
+            }
+        }
+
+        for sheep in lost_sheep {
+            let shepherd = *self.sheep_shepherd.get(&VerifiedEntity::assert_valid(sheep)).unwrap();
+            self.remove(&VerifiedEntity::assert_valid(shepherd), sheep);
+            entities.sheep.kill(sheep);
+        }
+    }
+
     pub fn count_sheep(&self, id: &VerifiedEntity<ShepherdId>) -> usize {
         self.shepherd_sheep.get(id).unwrap().len()
     }
@@ -152,9 +187,11 @@ fn main() {
 
     assert_eq!(4, game.state.count_sheep(&little_bo_peep));
     assert_eq!(4, game.entities.sheep.ids().collect::<Vec<_>>().len());
+//    drop(little_bo_peep);
 
-    game.state.lose_even_sheep(&little_bo_peep, &mut game.entities.sheep);
+    game.state.lose_distant_sheep(&mut game.entities);
 
-    assert_eq!(2, game.state.count_sheep(&little_bo_peep));
-    assert_eq!(2, game.entities.sheep.ids().collect::<Vec<_>>().len());
+    let little_bo_peep = game.entities.shepherds.verify(shepherd).unwrap();
+    assert_eq!(3, game.state.count_sheep(&little_bo_peep));
+    assert_eq!(3, game.entities.sheep.ids().collect::<Vec<_>>().len());
 }
