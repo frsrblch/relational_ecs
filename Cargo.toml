@@ -8,3 +8,6 @@ edition = "2018"
 
 [dependencies]
 bit-set = "0.5.1"
+
+[[example]]
+name = "simple"

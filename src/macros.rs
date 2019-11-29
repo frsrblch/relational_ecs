@@ -1,18 +1,15 @@
 #[macro_export]
 macro_rules! id_type {
 ($type_name:ident) => {
-    use std::hash::Hash;
-    use crate::entities::Generation;
+    #[derive(Debug, Copy, Clone, Eq, PartialEq, std::hash::Hash, Ord, PartialOrd)]
+    pub struct $type_name(u32, $crate::entities::Generation);
 
-    #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
-    pub struct $type_name(u32, Generation);
-
-    impl IdType for $type_name {
+    impl $crate::traits::IdType for $type_name {
         fn new(index: u32) -> Self {
-            Self(index, Generation::default())
+            Self(index, $crate::entities::Generation::default())
         }
 
-        fn create(index: usize, gen: Generation) -> Self {
+        fn create(index: usize, gen: $crate::entities::Generation) -> Self {
             Self(index as u32, gen)
         }
 
@@ -20,7 +17,7 @@ macro_rules! id_type {
             self.0 as usize
         }
 
-        fn generation(&self) -> Generation {
+        fn generation(&self) -> $crate::entities::Generation {
             self.1
         }
     }
