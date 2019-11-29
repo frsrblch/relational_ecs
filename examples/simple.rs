@@ -1,8 +1,4 @@
-// TODO create prelude
-use relational_ecs::id_type;
-use relational_ecs::entities::*;
-use relational_ecs::storage::*;
-use relational_ecs::traits::*;
+use relational_ecs::prelude::*;
 
 id_type!(SheepId);
 id_type!(CrookId);
