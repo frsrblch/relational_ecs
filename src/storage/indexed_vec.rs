@@ -1,5 +1,6 @@
 use std::marker::PhantomData;
 use super::*;
+use std::ops::{Index, IndexMut};
 
 #[derive(Debug)]
 pub struct IndexedVec<ID, T> {
@@ -46,6 +47,20 @@ impl<ID: IdType, T> Insert<ID, T> for IndexedVec<ID, T> {
             len if len == id.index() => self.values.push(value),
             _ => panic!("entity index out of bounds"),
         };
+    }
+}
+
+impl<'a, ID: IdType, T> Index<&'a VerifiedEntity<'a, ID>> for IndexedVec<ID, T> {
+    type Output = T;
+
+    fn index(&self, index: &'a VerifiedEntity<'a, ID>) -> &Self::Output {
+        &self.values[index.index()]
+    }
+}
+
+impl<'a, ID: IdType, T> IndexMut<&'a VerifiedEntity<'a, ID>> for IndexedVec<ID, T> {
+    fn index_mut(&mut self, index: &'a VerifiedEntity<'a, ID>) -> &mut Self::Output {
+        &mut self.values[index.index()]
     }
 }
 

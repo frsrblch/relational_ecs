@@ -44,13 +44,15 @@ impl Insert<SheepId, ShepherdId> for State {
 
 impl Insert<ShepherdId, SheepId> for State {
     fn insert(&mut self, id: &VerifiedEntity<ShepherdId>, value: SheepId) {
-        self.shepherd_sheep.get_mut(id).unwrap().insert(value);
+        let sheep = &mut self.shepherd_sheep[id];
+        sheep.insert(value);
     }
 }
 
 impl Remove<ShepherdId, SheepId> for State {
     fn remove(&mut self, id: &VerifiedEntity<ShepherdId>, value: SheepId) -> Option<SheepId> {
-        self.shepherd_sheep.get_mut(id).unwrap().remove(&value)
+        let sheep = &mut self.shepherd_sheep[id];
+        sheep.remove(&value)
     }
 }
 
@@ -89,49 +91,18 @@ impl State {
         id
     }
 
-    pub fn lose_all_sheep(&mut self, id: &VerifiedEntity<ShepherdId>, sheep: &mut Allocator<SheepId>) {
-        let shepherds_sheep = self.shepherd_sheep.get_mut(id).unwrap();
-
-        for s in shepherds_sheep.iter() {
-            sheep.kill(*s);
-        }
-
-        shepherds_sheep.clear();
-    }
-
-    pub fn lose_even_sheep(&mut self, id: &VerifiedEntity<ShepherdId>, sheep: &mut Allocator<SheepId>) {
-        let shepherds_sheep = self.shepherd_sheep.get_mut(id).unwrap();
-
-        let sheep_to_remove = shepherds_sheep.iter()
-            .copied()
-            .enumerate()
-            .filter_map(|(i, s)| if i % 2 == 0 {
-                Some(s)
-            } else {
-                None
-            })
-            .collect::<Vec<_>>();
-
-        for s in sheep_to_remove.iter() {
-            shepherds_sheep.remove(s);
-            sheep.kill(*s);
-        }
-    }
-
     pub fn lose_distant_sheep(&mut self, entities: &mut Entities) {
         let mut lost_sheep = Vec::new();
 
         for shepherd in entities.shepherds.ids() {
-            let crook = self.shepherd_crook
-                .get(&shepherd)
-                .and_then(|c| entities.crooks.verify(*c))
-                .unwrap();
+            let crook = self.shepherd_crook[&shepherd];
+            let crook = entities.crooks.verify(crook).unwrap();
 
-            let length = self.crook_length.get(&crook).unwrap();
+            let length = self.crook_length[&crook];
 
-            for sheep in self.shepherd_sheep.get(&shepherd).unwrap().iter() {
+            for sheep in self.shepherd_sheep[&shepherd].iter() {
                 if let Some(sheep) = entities.sheep.verify(*sheep) {
-                    let distance = self.sheep_position.get(&sheep).unwrap();
+                    let distance = self.sheep_position[&sheep];
                     if distance.magnitude() > length.0 {
                         lost_sheep.push(sheep.entity);
                     }
@@ -140,14 +111,14 @@ impl State {
         }
 
         for sheep in lost_sheep {
-            let shepherd = *self.sheep_shepherd.get(&VerifiedEntity::assert_valid(sheep)).unwrap();
+            let shepherd = self.sheep_shepherd[&VerifiedEntity::assert_valid(sheep)];
             self.remove(&VerifiedEntity::assert_valid(shepherd), sheep);
             entities.sheep.kill(sheep);
         }
     }
 
     pub fn count_sheep(&self, id: &VerifiedEntity<ShepherdId>) -> usize {
-        self.shepherd_sheep.get(id).unwrap().len()
+        self.shepherd_sheep[id].len()
     }
 }
 
@@ -183,11 +154,10 @@ fn main() {
     };
 
     let shepherd = shepherd.create(&mut game.state, &mut game.entities);
-    let little_bo_peep = game.entities.shepherds.verify(shepherd).unwrap();
 
+    let little_bo_peep = game.entities.shepherds.verify(shepherd).unwrap();
     assert_eq!(4, game.state.count_sheep(&little_bo_peep));
     assert_eq!(4, game.entities.sheep.ids().collect::<Vec<_>>().len());
-//    drop(little_bo_peep);
 
     game.state.lose_distant_sheep(&mut game.entities);
 
