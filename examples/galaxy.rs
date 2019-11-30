@@ -167,10 +167,6 @@ mod entities {
     id_type!(OrbitId);
     id_type!(TransitId);
 
-    id_type!(CelestialId);
-    id_type!(SurfaceId);
-    id_type!(AtmosphereId);
-
     #[derive(Debug, Default)]
     pub struct Allocators {
         pub systems: Allocator<SystemId>,
@@ -178,8 +174,6 @@ mod entities {
         pub locations: Allocator<LocationId>,
         pub orbits: Allocator<OrbitId>,
         pub transits: Allocator<TransitId>,
-
-        pub celestials: Allocator<CelestialId>,
     }
 }
 
@@ -227,11 +221,13 @@ fn quick_test() {
     };
     let center = center.create(&mut galaxy.state, &mut galaxy.entities).entity;
 
-    let system = galaxy.entities.systems.verify(system).unwrap();
-    let center = galaxy.entities.locations.verify(center).unwrap();
+    {
+        let system = galaxy.entities.systems.verify(system).unwrap();
+        let center = galaxy.entities.locations.verify(center).unwrap();
 
-    assert_eq!(system.entity, galaxy.state.location_system[&center]);
-    assert_eq!(Some(&center.entity), galaxy.state.system_locations[&system].iter().nth(0));
-    assert!(galaxy.entities.orbits.ids().next().is_none());
-    assert!(galaxy.entities.transits.ids().next().is_none());
+        assert_eq!(system.entity, galaxy.state.location_system[&center]);
+        assert_eq!(Some(&center.entity), galaxy.state.system_locations[&system].iter().nth(0));
+        assert!(galaxy.entities.orbits.ids().next().is_none());
+        assert!(galaxy.entities.transits.ids().next().is_none());
+    }
 }
