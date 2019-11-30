@@ -136,8 +136,8 @@ mod state {
     }
 
     impl LocationCreator {
-        pub fn create<'a>(self, state: &mut State, allocators: &'a mut Allocators) -> VerifiedEntity<'a, LocationId> {
-            let system = allocators.systems.verify(self.system).expect("invalid system id");
+        pub fn create(self, state: &mut State, allocators: &mut Allocators) -> LocationId {
+            let system = allocators.systems.verify(self.system).expect("LocationCreator: invalid system id");
 
             let location = state.create(self.location, &mut allocators.locations);
 
@@ -153,7 +153,7 @@ mod state {
                 state.link(&location, &transit);
             }
 
-            location
+            location.entity
         }
     }
 }
@@ -219,7 +219,7 @@ fn quick_test() {
         orbit: None,
         transit: None,
     };
-    let center = center.create(&mut galaxy.state, &mut galaxy.entities).entity;
+    let center = center.create(&mut galaxy.state, &mut galaxy.entities);
 
     {
         let system = galaxy.entities.systems.verify(system).unwrap();
