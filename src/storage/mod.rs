@@ -33,12 +33,12 @@ mod entity_map {
             self.0.clear();
         }
 
-        pub fn insert(&mut self, id: ID, value: T) {
-            self.0.insert(id, value);
+        pub fn insert(&mut self, id: &VerifiedEntity<ID>, value: T) {
+            self.0.insert(id.entity, value);
         }
 
-        pub fn remove(&mut self, value: &ID) -> Option<T> {
-            self.0.remove(value)
+        pub fn remove(&mut self, id: &VerifiedEntity<ID>) -> Option<T> {
+            self.0.remove(&id.entity)
         }
 
         pub fn len(&self) -> usize {
