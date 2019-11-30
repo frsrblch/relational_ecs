@@ -12,3 +12,6 @@ rustc-hash = "1.0.1"
 
 [[example]]
 name = "simple"
+
+[[example]]
+name = "galaxy"

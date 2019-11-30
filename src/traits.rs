@@ -42,3 +42,24 @@ pub trait Create<'a, ID: IdType, T> : Insert<ID, T> {
         id
     }
 }
+
+pub trait Connect2<IDA: IdType, IDB: IdType> {
+    fn connect(&mut self, id_a: &VerifiedEntity<IDA>, id_b: &VerifiedEntity<IDB>);
+}
+
+pub trait Spawn2<'a, IDA: IdType, IDB: IdType, A, B> : Create<'a, IDA, A> + Create<'a, IDB, B> + Link<IDA, IDB> {
+    fn spawn(
+        &mut self,
+        row_a: A,
+        row_b: B,
+        alloc_a: &'a mut Allocator<IDA>,
+        alloc_b: &'a mut Allocator<IDB>
+    ) -> (VerifiedEntity<'a, IDA>, VerifiedEntity<'a, IDB>) {
+        let id_a = self.create(row_a, alloc_a);
+        let id_b = self.create(row_b, alloc_b);
+
+        self.link(&id_a, &id_b);
+
+        (id_a, id_b)
+    }
+}
