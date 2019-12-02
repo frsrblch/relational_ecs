@@ -90,8 +90,8 @@ mod state {
 
     impl Remove<SystemId, LocationId> for State {
         fn remove(&mut self, id: &VerifiedEntity<SystemId>, value: LocationId) -> Option<LocationId> {
-            let locations = &mut self.system_locations[id];
-            locations.remove(&value)
+            let values = &mut self.system_locations[id];
+            values.remove(&value)
         }
     }
 
