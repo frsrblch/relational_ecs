@@ -23,6 +23,7 @@ mod state {
         pub location_position: IndexedVec<LocationId, Position>,
         pub location_orbit: EntityMap<LocationId, OrbitId>,
         pub location_transit: EntityMap<LocationId, TransitId>,
+        pub location_body: EntityMap<LocationId, BodyId>,
 
         pub orbit_location: IndexedVec<OrbitId, LocationId>,
         pub orbit_radius: IndexedVec<OrbitId, Radius>,
@@ -33,12 +34,49 @@ mod state {
         pub transit_location: IndexedVec<TransitId, LocationId>,
         pub transit_ends: IndexedVec<TransitId, Ends>,
         pub transit_duration: IndexedVec<TransitId, Seconds>,
+
+        pub body_radius: IndexedVec<BodyId, Radius>,
+        pub body_mass: IndexedVec<BodyId, Mass>,
+        pub body_surface: EntityMap<BodyId, SurfaceId>,
+        pub body_atmosphere: EntityMap<BodyId, AtmosphereId>,
+        pub body_location: IndexedVec<BodyId, LocationId>,
+
+        pub surface_body: IndexedVec<SurfaceId, BodyId>,
+        pub surface_albedo: IndexedVec<SurfaceId, Albedo>,
+        pub surface_area: IndexedVec<SurfaceId, Area>,
+
+        pub atmosphere_body: IndexedVec<AtmosphereId, BodyId>,
+        pub atmosphere_greenhouse: IndexedVec<AtmosphereId, Greenhouse>,
+        pub atmosphere_pressure: IndexedVec<AtmosphereId, Pressure>,
     }
 
     pub type SystemRow = (String, LightYears);
     pub type LocationRow = (Position);
     pub type OrbitRow = (Radius, Period, Angle);
     pub struct TransitRow { pub ends: Ends, pub duration: Seconds }
+    pub struct BodyRow { pub radius: Radius, pub mass: Mass }
+    pub struct SurfaceRow { pub albedo: Albedo, pub area: Area }
+    pub struct AtmosphereRow { pub greenhouse: Greenhouse, pub pressure: Pressure }
+
+    // TODO create macros to cut down on this boilerplate
+
+    impl Insert<BodyId, BodyRow> for State {
+        fn insert(&mut self, id: &VerifiedEntity<BodyId>, value: BodyRow) {
+            self.body_radius.insert(id, value.radius);
+            self.body_mass.insert(id, value.mass);
+        }
+    }
+
+    impl Create<'_, BodyId, BodyRow> for State {}
+
+    impl Insert<SurfaceId, SurfaceRow> for State {
+        fn insert(&mut self, id: &VerifiedEntity<SurfaceId>, value: SurfaceRow) {
+            self.surface_albedo.insert(id, value.albedo);
+            self.surface_area.insert(id, value.area);
+        }
+    }
+
+    impl Create<'_, SurfaceId, SurfaceRow> for State {}
 
     impl Insert<TransitId, TransitRow> for State {
         fn insert(&mut self, id: &VerifiedEntity<TransitId>, value: TransitRow) {
@@ -47,7 +85,58 @@ mod state {
         }
     }
 
-    impl<'a> Create<'a, TransitId, TransitRow> for State {}
+    impl Insert<SurfaceId, BodyId> for State {
+        fn insert(&mut self, id: &VerifiedEntity<SurfaceId>, value: BodyId) {
+            self.surface_body.insert(id, value);
+        }
+    }
+
+    impl Insert<BodyId, SurfaceId> for State {
+        fn insert(&mut self, id: &VerifiedEntity<BodyId>, value: SurfaceId) {
+            self.body_surface.insert(id, value);
+        }
+    }
+
+    impl Link<BodyId, SurfaceId> for State {}
+
+    impl Create<'_, TransitId, TransitRow> for State {}
+
+    impl Insert<AtmosphereId, AtmosphereRow> for State {
+        fn insert(&mut self, id: &VerifiedEntity<AtmosphereId>, value: AtmosphereRow) {
+            self.atmosphere_greenhouse.insert(id, value.greenhouse);
+            self.atmosphere_pressure.insert(id, value.pressure);
+        }
+    }
+
+    impl Create<'_, AtmosphereId, AtmosphereRow> for State {}
+
+    impl Insert<AtmosphereId, BodyId> for State {
+        fn insert(&mut self, id: &VerifiedEntity<AtmosphereId>, value: BodyId) {
+            self.atmosphere_body.insert(id, value);
+        }
+    }
+
+    impl Insert<BodyId, AtmosphereId> for State {
+        fn insert(&mut self, id: &VerifiedEntity<BodyId>, value: AtmosphereId) {
+            self.body_atmosphere.insert(id, value);
+        }
+    }
+
+    impl Link<BodyId, AtmosphereId> for State {}
+
+    impl Insert<BodyId, LocationId> for State {
+        fn insert(&mut self, id: &VerifiedEntity<BodyId>, value: LocationId) {
+            self.body_location.insert(id, value);
+        }
+    }
+
+    impl Insert<LocationId, BodyId> for State {
+        fn insert(&mut self, id: &VerifiedEntity<LocationId>, value: BodyId) {
+            self.location_body.insert(id, value);
+        }
+    }
+
+    impl Link<LocationId, BodyId> for State {}
 
     impl Insert<TransitId, LocationId> for State {
         fn insert(&mut self, id: &VerifiedEntity<TransitId>, value: LocationId) {
@@ -71,7 +160,7 @@ mod state {
         }
     }
 
-    impl<'a> Create<'a, SystemId, SystemRow> for State {}
+    impl Create<'_, SystemId, SystemRow> for State {}
 
     impl Insert<LocationId, LocationRow> for State {
         fn insert(&mut self, id: &VerifiedEntity<LocationId>, value: LocationRow) {
@@ -79,7 +168,7 @@ mod state {
         }
     }
 
-    impl<'a> Create<'a, LocationId, LocationRow> for State {}
+    impl Create<'_, LocationId, LocationRow> for State {}
 
     impl Insert<SystemId, LocationId> for State {
         fn insert(&mut self, id: &VerifiedEntity<SystemId>, value: LocationId) {
@@ -126,7 +215,7 @@ mod state {
         }
     }
 
-    impl<'a> Create<'a, OrbitId, OrbitRow> for State {}
+    impl Create<'_, OrbitId, OrbitRow> for State {}
 
     pub struct LocationCreator {
         pub system: SystemId,
@@ -156,6 +245,38 @@ mod state {
             location.entity
         }
     }
+
+    pub struct Planet {
+        pub system: SystemId,
+        pub orbit: OrbitRow,
+        pub body: BodyRow,
+        pub surface: Option<SurfaceRow>,
+        pub atmosphere: Option<AtmosphereRow>,
+    }
+
+    impl Planet {
+        pub fn create(self, galaxy: &mut Galaxy) -> LocationId {
+            let location = galaxy.state.create(Position::default(), &mut galaxy.entities.locations);
+
+            let orbit = galaxy.state.create(self.orbit, &mut galaxy.entities.orbits);
+            galaxy.state.link(&location, &orbit);
+
+            let body = galaxy.state.create(self.body, &mut galaxy.entities.bodies);
+            galaxy.state.link(&location, &body);
+
+            if let Some(surface) = self.surface {
+                let surface = galaxy.state.create(surface, &mut galaxy.entities.surfaces);
+                galaxy.state.link(&body, &surface);
+            }
+
+            if let Some(atmosphere) = self.atmosphere {
+                let atmosphere = galaxy.state.create(atmosphere, &mut galaxy.entities.atmospheres);
+                galaxy.state.link(&body, &atmosphere);
+            }
+
+            location.entity
+        }
+    }
 }
 
 mod entities {
@@ -167,6 +288,10 @@ mod entities {
     id_type!(OrbitId);
     id_type!(TransitId);
 
+    id_type!(BodyId);
+    id_type!(SurfaceId);
+    id_type!(AtmosphereId);
+
     #[derive(Debug, Default)]
     pub struct Allocators {
         pub systems: Allocator<SystemId>,
@@ -174,6 +299,10 @@ mod entities {
         pub locations: Allocator<LocationId>,
         pub orbits: Allocator<OrbitId>,
         pub transits: Allocator<TransitId>,
+
+        pub bodies: Allocator<BodyId>,
+        pub surfaces: Allocator<SurfaceId>,
+        pub atmospheres: Allocator<AtmosphereId>,
     }
 }
 
@@ -182,6 +311,9 @@ mod components {
 
     #[derive(Debug, Default, Copy, Clone, PartialEq)]
     pub struct LightYears(f64, f64);
+
+    #[derive(Debug, Default, Copy, Clone, PartialEq)]
+    pub struct Mass(f64, f64);
 
     #[derive(Debug, Default, Copy, Clone, PartialEq)]
     pub struct Position(f64, f64);
@@ -198,8 +330,20 @@ mod components {
     #[derive(Debug, Default, Copy, Clone, PartialEq)]
     pub struct Seconds(f64);
 
+    #[derive(Debug, Default, Copy, Clone, PartialEq)]
+    pub struct Area(f64);
+
+    #[derive(Debug, Default, Copy, Clone, PartialEq)]
+    pub struct Albedo(f64);
+
+    #[derive(Debug, Default, Copy, Clone, PartialEq)]
+    pub struct Greenhouse(f64);
+
+    #[derive(Debug, Default, Copy, Clone, PartialEq)]
+    pub struct Pressure(f64);
+
     #[derive(Debug, Copy, Clone, PartialEq)]
-    pub struct Ends(LocationId, LocationId);
+    pub struct Ends { pub from: LocationId, pub to: LocationId }
 }
 
 fn main() {
