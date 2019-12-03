@@ -164,6 +164,9 @@ pub mod state {
     }
     impl Create<'_, OrbitId, OrbitRow> for State {}
 
+    /// Complicated entity graphs constructed in one flat "layer", rather than a nested structure.
+    /// This keeps allocator borrows simple
+    /// And keeps traits like Create and Link generic
     pub struct Planet {
         pub system: SystemId,
         pub orbit: OrbitRow,
