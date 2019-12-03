@@ -174,35 +174,70 @@ pub mod state {
         pub surface: Option<SurfaceRow>,
         pub atmosphere: Option<AtmosphereRow>,
     }
+    
+    impl Construct<BodyId, Planet> for Galaxy {
+        fn construct(&mut self, planet: Planet) -> BodyId {
+            let system = self.entities.systems.verify(planet.system)
+                .expect("invalid system id");
 
-    impl Planet {
-        pub fn create(self, galaxy: &mut Galaxy) -> BodyId {
-            let system = galaxy.entities.systems.verify(self.system)
-                .expect("Planet::create - invalid system id");
-
-            if let Some(parent) = &self.orbit.parent {
-                let _parent = galaxy.entities.orbits.verify(*parent)
-                    .expect("Planet::create - invalid parent orbit");
+            if let Some(parent) = &planet.orbit.parent {
+                let _parent = self.entities.orbits.verify(*parent)
+                    .expect("invalid parent orbit");
             }
 
-            let location = galaxy.state.create(Position::default(), &mut galaxy.entities.locations);
-            galaxy.state.link(&system, &location);
+            let location = self.state.create(Position::default(), &mut self.entities.locations);
+            self.state.link(&system, &location);
 
-            let orbit = galaxy.state.create(self.orbit, &mut galaxy.entities.orbits);
-            galaxy.state.link(&location, &orbit);
+            let orbit = self.state.create(planet.orbit, &mut self.entities.orbits);
+            self.state.link(&location, &orbit);
 
-            let body = galaxy.state.create(self.body, &mut galaxy.entities.bodies);
-            galaxy.state.link(&location, &body);
+            let body = self.state.create(planet.body, &mut self.entities.bodies);
+            self.state.link(&location, &body);
 
-            if let Some(surface) = self.surface {
-                let surface = galaxy.state.create(surface, &mut galaxy.entities.surfaces);
-                galaxy.state.link(&body, &surface);
+            if let Some(surface) = planet.surface {
+                let surface = self.state.create(surface, &mut self.entities.surfaces);
+                self.state.link(&body, &surface);
             }
 
-            if let Some(atmosphere) = self.atmosphere {
-                let atmosphere = galaxy.state.create(atmosphere, &mut galaxy.entities.atmospheres);
-                galaxy.state.link(&body, &atmosphere);
+            if let Some(atmosphere) = planet.atmosphere {
+                let atmosphere = self.state.create(atmosphere, &mut self.entities.atmospheres);
+                self.state.link(&body, &atmosphere);
             }
+
+            body.entity
+        }
+    }
+
+    pub struct Moon {
+        pub system: SystemId,
+        pub orbit: OrbitRow,
+        pub body: BodyRow,
+        pub surface: SurfaceRow,
+    }
+
+    /// Similar entities with different requirements can be built from different types.
+    /// Planet and Moon are both used to Construct a BodyId, but have different requirements.
+    impl Construct<BodyId, Moon> for Galaxy {
+        fn construct(&mut self, moon: Moon) -> BodyId {
+            let system = self.entities.systems.verify(moon.system)
+                .expect("invalid system id");
+
+            // This requirement could be tested when initializing Moon, but is here for the sake of example.
+            let parent = &moon.orbit.parent.expect("moons must have a parent orbit");
+            let _parent = self.entities.orbits.verify(*parent)
+                .expect("Planet::create - invalid parent orbit");
+
+            let location = self.state.create(Position::default(), &mut self.entities.locations);
+            self.state.link(&system, &location);
+
+            let orbit = self.state.create(moon.orbit, &mut self.entities.orbits);
+            self.state.link(&location, &orbit);
+
+            let body = self.state.create(moon.body, &mut self.entities.bodies);
+            self.state.link(&location, &body);
+
+            let surface = self.state.create(moon.surface, &mut self.entities.surfaces);
+            self.state.link(&body, &surface);
 
             body.entity
         }
