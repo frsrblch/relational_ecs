@@ -53,13 +53,35 @@ pub mod state {
 
     pub type SystemRow = (String, LightYears);
     pub type LocationRow = (Position);
-    pub struct OrbitRow { pub radius: Radius, pub period: Period, pub angle: Angle, pub parent: Option<OrbitId> }
-    pub struct TransitRow { pub ends: Ends, pub duration: Seconds }
-    pub struct BodyRow { pub radius: Radius, pub mass: Mass }
-    pub struct SurfaceRow { pub albedo: Albedo, pub area: Area }
-    pub struct AtmosphereRow { pub greenhouse: Greenhouse, pub pressure: Pressure }
 
-    impl OrbitRow {
+    pub struct OrbitRow {
+        pub radius: Radius,
+        pub period: Period,
+        pub angle: Angle,
+        pub parent: Option<OrbitId>,
+    }
+
+    pub struct TransitRow {
+        pub ends: Ends,
+        pub duration: Seconds
+    }
+
+    pub struct BodyRow {
+        pub radius: Radius,
+        pub mass: Mass
+    }
+
+    pub struct SurfaceRow {
+        pub albedo: Albedo,
+        pub area: Area
+    }
+
+    pub struct AtmosphereRow {
+        pub greenhouse: Greenhouse,
+        pub pressure: Pressure
+    }
+
+    impl<'a> OrbitRow {
         pub fn from_parent(radius: Radius, period: Period, angle: Angle, galaxy: &Galaxy, parent: BodyId) -> Self {
             let parent_orbit = galaxy.state
                 .lookup2(parent, &galaxy.entities.bodies, &galaxy.entities.locations, &galaxy.entities.orbits)
@@ -142,35 +164,6 @@ pub mod state {
     }
     impl Create<'_, OrbitId, OrbitRow> for State {}
 
-    pub struct LocationCreator {
-        pub system: SystemId,
-        pub location: LocationRow,
-        pub orbit: Option<OrbitRow>,
-        pub transit: Option<TransitRow>,
-    }
-
-    impl LocationCreator {
-        pub fn create(self, state: &mut State, allocators: &mut Allocators) -> LocationId {
-            let system = allocators.systems.verify(self.system).expect("LocationCreator: invalid system id");
-
-            let location = state.create(self.location, &mut allocators.locations);
-
-            state.link(&system, &location);
-
-            if let Some(orbit) = self.orbit {
-                let orbit = state.create(orbit, &mut allocators.orbits);
-                state.link(&location, &orbit);
-            }
-
-            if let Some(transit) = self.transit {
-                let transit = state.create(transit, &mut allocators.transits);
-                state.link(&location, &transit);
-            }
-
-            location.entity
-        }
-    }
-
     pub struct Planet {
         pub system: SystemId,
         pub orbit: OrbitRow,
@@ -182,7 +175,7 @@ pub mod state {
     impl Planet {
         pub fn create(self, galaxy: &mut Galaxy) -> LocationId {
             let system = galaxy.entities.systems.verify(self.system)
-                .expect("Planet::create: invalid system");
+                .expect("Planet::create - invalid system id");
 
             let location = galaxy.state.create(Position::default(), &mut galaxy.entities.locations);
             galaxy.state.link(&system, &location);
