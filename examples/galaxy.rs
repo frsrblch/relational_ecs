@@ -1,4 +1,4 @@
-use relational_ecs::id_type;
+use relational_ecs::*;
 use relational_ecs::prelude::*;
 use crate::state::*;
 use crate::entities::*;
@@ -10,7 +10,7 @@ pub struct Galaxy {
     pub entities: entities::Allocators,
 }
 
-mod state {
+pub mod state {
     use super::*;
 
     #[derive(Debug, Default)]
@@ -30,6 +30,7 @@ mod state {
         pub orbit_period: IndexedVec<OrbitId, Period>,
         pub orbit_angle_offset: IndexedVec<OrbitId, Angle>,
         pub orbit_relative_position: IndexedVec<OrbitId, Position>,
+        pub orbit_parent: IndexedVec<OrbitId, Option<OrbitId>>,
 
         pub transit_location: IndexedVec<TransitId, LocationId>,
         pub transit_ends: IndexedVec<TransitId, Ends>,
@@ -52,13 +53,37 @@ mod state {
 
     pub type SystemRow = (String, LightYears);
     pub type LocationRow = (Position);
-    pub type OrbitRow = (Radius, Period, Angle);
+    pub struct OrbitRow { pub radius: Radius, pub period: Period, pub angle: Angle, pub parent: Option<OrbitId> }
     pub struct TransitRow { pub ends: Ends, pub duration: Seconds }
     pub struct BodyRow { pub radius: Radius, pub mass: Mass }
     pub struct SurfaceRow { pub albedo: Albedo, pub area: Area }
     pub struct AtmosphereRow { pub greenhouse: Greenhouse, pub pressure: Pressure }
 
-    // TODO create macros to cut down on this boilerplate
+    impl OrbitRow {
+        pub fn from_parent(radius: Radius, period: Period, angle: Angle, galaxy: &Galaxy, parent: BodyId) -> Self {
+            // TODO cross-referencing is verbose and repetetive
+            let parent = galaxy.entities.bodies.verify(parent).expect("invalid parent id");
+            let parent_location = &galaxy.state.body_location[&parent];
+            let parent_location = galaxy.entities.locations.verify(*parent_location).expect("invalid parent location");
+            let parent_orbit = galaxy.state.location_orbit.get(&parent_location);
+
+            OrbitRow {
+                radius,
+                period,
+                angle,
+                parent: parent_orbit.copied()
+            }
+        }
+    }
+
+    link_to_many!(SystemId, system_locations, LocationId, location_system);
+
+    link!(LocationId, location_transit, TransitId, transit_location);
+    link!(LocationId, location_orbit, OrbitId, orbit_location);
+    link!(LocationId, location_body, BodyId, body_location);
+
+    link!(BodyId, body_surface, SurfaceId, surface_body);
+    link!(BodyId, body_atmosphere, AtmosphereId, atmosphere_body);
 
     impl Insert<BodyId, BodyRow> for State {
         fn insert(&mut self, id: &VerifiedEntity<BodyId>, value: BodyRow) {
@@ -66,8 +91,8 @@ mod state {
             self.body_mass.insert(id, value.mass);
         }
     }
-
     impl Create<'_, BodyId, BodyRow> for State {}
+
 
     impl Insert<SurfaceId, SurfaceRow> for State {
         fn insert(&mut self, id: &VerifiedEntity<SurfaceId>, value: SurfaceRow) {
@@ -75,8 +100,8 @@ mod state {
             self.surface_area.insert(id, value.area);
         }
     }
-
     impl Create<'_, SurfaceId, SurfaceRow> for State {}
+
 
     impl Insert<TransitId, TransitRow> for State {
         fn insert(&mut self, id: &VerifiedEntity<TransitId>, value: TransitRow) {
@@ -84,22 +109,8 @@ mod state {
             self.transit_duration.insert(id, value.duration);
         }
     }
-
-    impl Insert<SurfaceId, BodyId> for State {
-        fn insert(&mut self, id: &VerifiedEntity<SurfaceId>, value: BodyId) {
-            self.surface_body.insert(id, value);
-        }
-    }
-
-    impl Insert<BodyId, SurfaceId> for State {
-        fn insert(&mut self, id: &VerifiedEntity<BodyId>, value: SurfaceId) {
-            self.body_surface.insert(id, value);
-        }
-    }
-
-    impl Link<BodyId, SurfaceId> for State {}
-
     impl Create<'_, TransitId, TransitRow> for State {}
+
 
     impl Insert<AtmosphereId, AtmosphereRow> for State {
         fn insert(&mut self, id: &VerifiedEntity<AtmosphereId>, value: AtmosphereRow) {
@@ -107,50 +118,8 @@ mod state {
             self.atmosphere_pressure.insert(id, value.pressure);
         }
     }
-
     impl Create<'_, AtmosphereId, AtmosphereRow> for State {}
 
-    impl Insert<AtmosphereId, BodyId> for State {
-        fn insert(&mut self, id: &VerifiedEntity<AtmosphereId>, value: BodyId) {
-            self.atmosphere_body.insert(id, value);
-        }
-    }
-
-    impl Insert<BodyId, AtmosphereId> for State {
-        fn insert(&mut self, id: &VerifiedEntity<BodyId>, value: AtmosphereId) {
-            self.body_atmosphere.insert(id, value);
-        }
-    }
-
-    impl Link<BodyId, AtmosphereId> for State {}
-
-    impl Insert<BodyId, LocationId> for State {
-        fn insert(&mut self, id: &VerifiedEntity<BodyId>, value: LocationId) {
-            self.body_location.insert(id, value);
-        }
-    }
-
-    impl Insert<LocationId, BodyId> for State {
-        fn insert(&mut self, id: &VerifiedEntity<LocationId>, value: BodyId) {
-            self.location_body.insert(id, value);
-        }
-    }
-
-    impl Link<LocationId, BodyId> for State {}
-
-    impl Insert<TransitId, LocationId> for State {
-        fn insert(&mut self, id: &VerifiedEntity<TransitId>, value: LocationId) {
-            self.transit_location.insert(id, value);
-        }
-    }
-
-    impl Insert<LocationId, TransitId> for State {
-        fn insert(&mut self, id: &VerifiedEntity<LocationId>, value: TransitId) {
-            self.location_transit.insert(id, value);
-        }
-    }
-
-    impl Link<LocationId, TransitId> for State {}
 
     impl Insert<SystemId, SystemRow> for State {
         fn insert(&mut self, id: &VerifiedEntity<SystemId>, value: (String, LightYears)) {
@@ -159,63 +128,28 @@ mod state {
             self.system_locations.insert(id, EntitySet::new());
         }
     }
-
     impl Create<'_, SystemId, SystemRow> for State {}
+
 
     impl Insert<LocationId, LocationRow> for State {
         fn insert(&mut self, id: &VerifiedEntity<LocationId>, value: LocationRow) {
             self.location_position.insert(id, value);
         }
     }
-
     impl Create<'_, LocationId, LocationRow> for State {}
 
-    impl Insert<SystemId, LocationId> for State {
-        fn insert(&mut self, id: &VerifiedEntity<SystemId>, value: LocationId) {
-            let locations = &mut self.system_locations[id];
-            locations.insert(value);
-        }
-    }
-
-    impl Remove<SystemId, LocationId> for State {
-        fn remove(&mut self, id: &VerifiedEntity<SystemId>, value: LocationId) -> Option<LocationId> {
-            let values = &mut self.system_locations[id];
-            values.remove(&value)
-        }
-    }
-
-    impl Insert<LocationId, SystemId> for State {
-        fn insert(&mut self, id: &VerifiedEntity<LocationId>, value: SystemId) {
-            self.location_system.insert(id, value);
-        }
-    }
-
-    impl Link<SystemId, LocationId> for State {}
-
-    impl Insert<LocationId, OrbitId> for State {
-        fn insert(&mut self, id: &VerifiedEntity<LocationId>, value: OrbitId) {
-            self.location_orbit.insert(id, value);
-        }
-    }
-
-    impl Insert<OrbitId, LocationId> for State {
-        fn insert(&mut self, id: &VerifiedEntity<OrbitId>, value: LocationId) {
-            self.orbit_location.insert(id, value);
-        }
-    }
-
-    impl Link<LocationId, OrbitId> for State {}
 
     impl Insert<OrbitId, OrbitRow> for State {
-        fn insert(&mut self, id: &VerifiedEntity<OrbitId>, value: (Radius, Period, Angle)) {
-            self.orbit_radius.insert(id, value.0);
-            self.orbit_period.insert(id, value.1);
-            self.orbit_angle_offset.insert(id, value.2);
-            self.orbit_relative_position.insert(id, Default::default());
+        fn insert(&mut self, id: &VerifiedEntity<OrbitId>, value: OrbitRow) {
+            self.orbit_radius.insert(id, value.radius);
+            self.orbit_period.insert(id, value.period);
+            self.orbit_angle_offset.insert(id, value.angle);
+            self.orbit_relative_position.insert(id, Position::default());
+            self.orbit_parent.insert(id, value.parent);
         }
     }
-
     impl Create<'_, OrbitId, OrbitRow> for State {}
+
 
     pub struct LocationCreator {
         pub system: SystemId,
@@ -248,6 +182,7 @@ mod state {
 
     pub struct Planet {
         pub system: SystemId,
+        pub parent: BodyId,
         pub orbit: OrbitRow,
         pub body: BodyRow,
         pub surface: Option<SurfaceRow>,

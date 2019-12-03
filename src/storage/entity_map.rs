@@ -39,3 +39,13 @@ impl<ID: IdType, T> EntityMap<ID, T> {
         self.0.is_empty()
     }
 }
+
+impl<ID: IdType, T> Get<ID, T> for EntityMap<ID, T> {
+    fn get(&self, id: &VerifiedEntity<ID>) -> Option<&T> {
+        self.0.get(&id.entity)
+    }
+
+    fn get_mut(&mut self, id: &VerifiedEntity<ID>) -> Option<&mut T> {
+        self.0.get_mut(&id.entity)
+    }
+}
