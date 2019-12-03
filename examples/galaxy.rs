@@ -173,7 +173,6 @@ pub mod state {
 
     pub struct Planet {
         pub system: SystemId,
-        pub parent: BodyId,
         pub orbit: OrbitRow,
         pub body: BodyRow,
         pub surface: Option<SurfaceRow>,
@@ -182,7 +181,11 @@ pub mod state {
 
     impl Planet {
         pub fn create(self, galaxy: &mut Galaxy) -> LocationId {
+            let system = galaxy.entities.systems.verify(self.system)
+                .expect("Planet::create: invalid system");
+
             let location = galaxy.state.create(Position::default(), &mut galaxy.entities.locations);
+            galaxy.state.link(&system, &location);
 
             let orbit = galaxy.state.create(self.orbit, &mut galaxy.entities.orbits);
             galaxy.state.link(&location, &orbit);
