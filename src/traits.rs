@@ -42,3 +42,29 @@ pub trait Create<'a, ID: IdType, T> : Insert<ID, T> {
         id
     }
 }
+
+pub trait Lookup<'a, A: IdType, B: IdType> : Get<A, B> {
+    fn lookup(&self, a: A, alloc_a: &Allocator<A>, alloc_b: &'a Allocator<B>) -> Option<VerifiedEntity<'a, B>> {
+        alloc_a.verify(a).and_then(|a| self.lookup_verified(&a, alloc_b))
+    }
+
+    fn lookup_verified(&self, a: &VerifiedEntity<A>, alloc_b: &'a Allocator<B>) -> Option<VerifiedEntity<'a, B>> {
+        self.get(a)
+            .and_then(|b| alloc_b.verify(*b))
+    }
+}
+
+pub trait Lookup2<'a, 'b, A: IdType, B: IdType, C: IdType> : Lookup<'a, A, B> + Lookup<'b, B, C> {
+    fn lookup2(
+        &self,
+        a: A,
+        alloc_a: &Allocator<A>,
+        alloc_b: &'a Allocator<B>,
+        alloc_c: &'b Allocator<C>,
+    ) -> Option<VerifiedEntity<'b, C>> {
+        self.lookup(a, alloc_a, alloc_b)
+            .and_then(|b| self.lookup_verified(&b, alloc_c))
+    }
+}
+
+impl<'a, 'b, A: IdType, B: IdType, C: IdType, STATE: Lookup<'a, A, B> + Lookup<'b, B, C>> Lookup2<'a, 'b, A, B, C> for STATE {}

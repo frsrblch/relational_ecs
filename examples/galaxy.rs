@@ -61,17 +61,15 @@ pub mod state {
 
     impl OrbitRow {
         pub fn from_parent(radius: Radius, period: Period, angle: Angle, galaxy: &Galaxy, parent: BodyId) -> Self {
-            // TODO cross-referencing is verbose and repetetive
-            let parent = galaxy.entities.bodies.verify(parent).expect("invalid parent id");
-            let parent_location = &galaxy.state.body_location[&parent];
-            let parent_location = galaxy.entities.locations.verify(*parent_location).expect("invalid parent location");
-            let parent_orbit = galaxy.state.location_orbit.get(&parent_location);
+            let parent_orbit = galaxy.state
+                .lookup2(parent, &galaxy.entities.bodies, &galaxy.entities.locations, &galaxy.entities.orbits)
+                .expect("OrbitRow::from_parent: invalid parent id");
 
             OrbitRow {
                 radius,
                 period,
                 angle,
-                parent: parent_orbit.copied()
+                parent: Some(parent_orbit.entity),
             }
         }
     }
@@ -93,7 +91,6 @@ pub mod state {
     }
     impl Create<'_, BodyId, BodyRow> for State {}
 
-
     impl Insert<SurfaceId, SurfaceRow> for State {
         fn insert(&mut self, id: &VerifiedEntity<SurfaceId>, value: SurfaceRow) {
             self.surface_albedo.insert(id, value.albedo);
@@ -101,7 +98,6 @@ pub mod state {
         }
     }
     impl Create<'_, SurfaceId, SurfaceRow> for State {}
-
 
     impl Insert<TransitId, TransitRow> for State {
         fn insert(&mut self, id: &VerifiedEntity<TransitId>, value: TransitRow) {
@@ -111,7 +107,6 @@ pub mod state {
     }
     impl Create<'_, TransitId, TransitRow> for State {}
 
-
     impl Insert<AtmosphereId, AtmosphereRow> for State {
         fn insert(&mut self, id: &VerifiedEntity<AtmosphereId>, value: AtmosphereRow) {
             self.atmosphere_greenhouse.insert(id, value.greenhouse);
@@ -119,7 +114,6 @@ pub mod state {
         }
     }
     impl Create<'_, AtmosphereId, AtmosphereRow> for State {}
-
 
     impl Insert<SystemId, SystemRow> for State {
         fn insert(&mut self, id: &VerifiedEntity<SystemId>, value: (String, LightYears)) {
@@ -130,14 +124,12 @@ pub mod state {
     }
     impl Create<'_, SystemId, SystemRow> for State {}
 
-
     impl Insert<LocationId, LocationRow> for State {
         fn insert(&mut self, id: &VerifiedEntity<LocationId>, value: LocationRow) {
             self.location_position.insert(id, value);
         }
     }
     impl Create<'_, LocationId, LocationRow> for State {}
-
 
     impl Insert<OrbitId, OrbitRow> for State {
         fn insert(&mut self, id: &VerifiedEntity<OrbitId>, value: OrbitRow) {
@@ -149,7 +141,6 @@ pub mod state {
         }
     }
     impl Create<'_, OrbitId, OrbitRow> for State {}
-
 
     pub struct LocationCreator {
         pub system: SystemId,

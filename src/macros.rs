@@ -27,6 +27,24 @@ macro_rules! id_type {
 #[macro_export]
 macro_rules! link {
     ($id_a:ty, $field_a:ident, $id_b:ty, $field_b:ident) => {
+        impl Get<$id_a, $id_b> for State {
+            fn get(&self, id: &VerifiedEntity<$id_a>) -> Option<&$id_b> {
+                self.$field_a.get(id)
+            }
+            fn get_mut(&mut self, id: &VerifiedEntity<$id_a>) -> Option<&mut $id_b> {
+                self.$field_a.get_mut(id)
+            }
+        }
+
+        impl Get<$id_b, $id_a> for State {
+            fn get(&self, id: &VerifiedEntity<$id_b>) -> Option<&$id_a> {
+                self.$field_b.get(id)
+            }
+            fn get_mut(&mut self, id: &VerifiedEntity<$id_b>) -> Option<&mut $id_a> {
+                self.$field_b.get_mut(id)
+            }
+        }
+
         impl Insert<$id_b, $id_a> for State {
             fn insert(&mut self, id: &VerifiedEntity<$id_b>, value: $id_a) {
                 self.$field_b.insert(id, value);
@@ -38,6 +56,9 @@ macro_rules! link {
                 self.$field_a.insert(id, value);
             }
         }
+
+        impl Lookup<'_, $id_a, $id_b> for State {}
+        impl Lookup<'_, $id_b, $id_a> for State {}
     
         impl Link<$id_a, $id_b> for State {}
     }
