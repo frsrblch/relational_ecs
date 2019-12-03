@@ -68,3 +68,8 @@ pub trait Lookup2<'a, 'b, A: IdType, B: IdType, C: IdType> : Lookup<'a, A, B> + 
 }
 
 impl<'a, 'b, A: IdType, B: IdType, C: IdType, STATE: Lookup<'a, A, B> + Lookup<'b, B, C>> Lookup2<'a, 'b, A, B, C> for STATE {}
+
+/// Impl on the type that contains both state and entities
+pub trait Construct<ID, T> {
+    fn construct(&mut self, value: T) -> ID;
+}
