@@ -231,41 +231,23 @@ mod entities {
 mod components {
     use super::entities::LocationId;
 
-    #[derive(Debug, Default, Copy, Clone, PartialEq)]
-    pub struct LightYears(f64, f64);
-
-    #[derive(Debug, Default, Copy, Clone, PartialEq)]
-    pub struct Mass(f64, f64);
-
-    #[derive(Debug, Default, Copy, Clone, PartialEq)]
-    pub struct Position(f64, f64);
-
-    #[derive(Debug, Default, Copy, Clone, PartialEq)]
-    pub struct Period(f64);
-
-    #[derive(Debug, Default, Copy, Clone, PartialEq)]
-    pub struct Radius(f64);
-
-    #[derive(Debug, Default, Copy, Clone, PartialEq)]
-    pub struct Angle(f64);
-
-    #[derive(Debug, Default, Copy, Clone, PartialEq)]
-    pub struct Seconds(f64);
-
-    #[derive(Debug, Default, Copy, Clone, PartialEq)]
-    pub struct Area(f64);
-
-    #[derive(Debug, Default, Copy, Clone, PartialEq)]
-    pub struct Albedo(f64);
-
-    #[derive(Debug, Default, Copy, Clone, PartialEq)]
-    pub struct Greenhouse(f64);
-
-    #[derive(Debug, Default, Copy, Clone, PartialEq)]
-    pub struct Pressure(f64);
+    #[derive(Debug, Default, Copy, Clone, PartialEq)] pub struct LightYears(f64, f64);
+    #[derive(Debug, Default, Copy, Clone, PartialEq)] pub struct Mass(f64, f64);
+    #[derive(Debug, Default, Copy, Clone, PartialEq)] pub struct Position(f64, f64);
+    #[derive(Debug, Default, Copy, Clone, PartialEq)] pub struct Period(f64);
+    #[derive(Debug, Default, Copy, Clone, PartialEq)] pub struct Radius(f64);
+    #[derive(Debug, Default, Copy, Clone, PartialEq)] pub struct Angle(f64);
+    #[derive(Debug, Default, Copy, Clone, PartialEq)] pub struct Seconds(f64);
+    #[derive(Debug, Default, Copy, Clone, PartialEq)] pub struct Area(f64);
+    #[derive(Debug, Default, Copy, Clone, PartialEq)] pub struct Albedo(f64);
+    #[derive(Debug, Default, Copy, Clone, PartialEq)] pub struct Greenhouse(f64);
+    #[derive(Debug, Default, Copy, Clone, PartialEq)] pub struct Pressure(f64);
 
     #[derive(Debug, Copy, Clone, PartialEq)]
-    pub struct Ends { pub from: LocationId, pub to: LocationId }
+    pub struct Ends {
+        pub from: LocationId,
+        pub to: LocationId
+    }
 }
 
 fn main() {
