@@ -10,6 +10,12 @@ pub struct Galaxy {
     pub entities: entities::Allocators,
 }
 
+impl Split<Allocators, State> for Galaxy {
+    fn split(&mut self) -> (&mut Allocators, &mut State) {
+        (&mut self.entities, &mut self.state)
+    }
+}
+
 pub mod state {
     use super::*;
 
@@ -240,6 +246,51 @@ pub mod state {
             self.state.link(&body, &surface);
 
             body.entity
+        }
+    }
+
+    pub struct OrbitPosition;
+
+    impl Update<Galaxy> for OrbitPosition {
+        fn update(self, galaxy: &mut Galaxy) {
+            let (e, s) = galaxy.split();
+
+            e.orbits.ids()
+                .for_each(|orbit| {
+                    update_relative_position(s, &orbit);
+                });
+        }
+    }
+
+    fn update_relative_position(_state: &mut State, _orbit: &VerifiedEntity<OrbitId>) {
+        unimplemented!()
+    }
+
+    pub struct LocationPosition;
+
+    impl Update<Galaxy> for LocationPosition {
+        fn update(self, state: &mut Galaxy) {
+            let (e, s) = state.split();
+
+            s.location_orbit.values
+                .iter()
+                .filter_map(|(loc, orbit)| {
+                    let loc = e.locations.verify(*loc)?;
+                    let orbit = e.orbits.verify(*orbit)?;
+                    Some((loc, orbit))
+                })
+                .for_each(|(_loc, orbit)| {
+                    let mut _position = s.orbit_relative_position[&orbit];
+                    let mut orbit = orbit;
+
+                    while let Some(parent) = s.orbit_parent[&orbit] {
+                        if let Some(parent) = e.orbits.verify(parent) {
+                            orbit = parent;
+                            dbg!(&orbit);
+                            unimplemented!()
+                        }
+                    }
+                });
         }
     }
 }

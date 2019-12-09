@@ -73,3 +73,11 @@ impl<'a, 'b, A: IdType, B: IdType, C: IdType, STATE: Lookup<'a, A, B> + Lookup<'
 pub trait Construct<ID, T> {
     fn construct(&mut self, value: T) -> ID;
 }
+
+pub trait Update<T> {
+    fn update(self, state: &mut T);
+}
+
+pub trait  Split<E, S> {
+    fn split(&mut self) -> (&mut E, &mut S);
+}
