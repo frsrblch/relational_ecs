@@ -118,12 +118,10 @@ impl State {
 
             let length = self.crook_length[&crook];
 
-            for sheep in self.shepherd_sheep[&shepherd].iter() {
-                if let Some(sheep) = entities.sheep.verify(*sheep) {
-                    let distance = self.sheep_position[&sheep];
-                    if distance.magnitude() > length.0 {
-                        self.lost_sheep.push(sheep.entity);
-                    }
+            for sheep in self.shepherd_sheep[&shepherd].verified(&entities.sheep) {
+                let distance = self.sheep_position[&sheep];
+                if distance.magnitude() > length.0 {
+                    self.lost_sheep.push(sheep.entity);
                 }
             }
         }
