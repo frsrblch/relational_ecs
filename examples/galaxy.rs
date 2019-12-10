@@ -232,11 +232,11 @@ pub mod state {
 
             let location = self.state.create_and_link(&system, Position::default(), &mut self.entities.locations);
 
-            let orbit = self.state.create_and_link(&location, moon.orbit, &mut self.entities.orbits);
+            let _orbit = self.state.create_and_link(&location, moon.orbit, &mut self.entities.orbits);
 
-            let body = self.state.create_and_linkeate(&location, moon.body, &mut self.entities.bodies);
+            let body = self.state.create_and_link(&location, moon.body, &mut self.entities.bodies);
 
-            let surface = self.state.create_and_link(&location, moon.surface, &mut self.entities.surfaces);
+            let _surface = self.state.create_and_link(&body, moon.surface, &mut self.entities.surfaces);
 
             body.entity
         }
