@@ -147,7 +147,7 @@ pub mod state {
         fn insert(&mut self, id: &VerifiedEntity<SystemId>, value: (String, LightYears)) {
             self.system_name.insert(id, value.0);
             self.system_position.insert(id, value.1);
-            self.system_locations.insert(id, EntitySet::new {});
+            self.system_locations.insert(id, EntitySet::new());
         }
     }
     impl Create<'_, SystemId, SystemRow> for State {}
