@@ -60,7 +60,12 @@ macro_rules! link {
         impl Lookup<'_, $id_a, $id_b> for State {}
         impl Lookup<'_, $id_b, $id_a> for State {}
     
-        impl Link<$id_a, $id_b> for State {}
+        impl Link<$id_a, $id_b> for State {
+            fn link(&mut self, a: &VerifiedEntity<$id_a>, b: &VerifiedEntity<$id_b>) {
+                self.insert(a, b.entity);
+                self.insert(b, a.entity);
+            }
+        }
     }
 }
 
@@ -87,6 +92,11 @@ macro_rules! link_to_many {
             }
         }
     
-        impl Link<$id_a, $id_b> for State {}
+        impl Link<$id_a, $id_b> for State {
+            fn link(&mut self, a: &VerifiedEntity<$id_a>, b: &VerifiedEntity<$id_b>) {
+                self.insert(a, b.entity);
+                self.insert(b, a.entity);
+            }
+        }
     }
 }
