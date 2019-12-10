@@ -367,28 +367,28 @@ fn main() {
 
 }
 
-#[test]
-fn quick_test() {
-    let mut galaxy = Galaxy::default();
-
-    let system: SystemRow = ("Sol".to_string(), LightYears::default());
-    let system = galaxy.state.create(system, &mut galaxy.entities.systems).entity;
-
-    let center = LocationCreator {
-        system,
-        location: Position::default(),
-        orbit: None,
-        transit: None,
-    };
-    let center = center.create(&mut galaxy.state, &mut galaxy.entities);
-
-    {
-        let system = galaxy.entities.systems.verify(system).unwrap();
-        let center = galaxy.entities.locations.verify(center).unwrap();
-
-        assert_eq!(system.entity, galaxy.state.location_system[&center]);
-        assert_eq!(Some(&center.entity), galaxy.state.system_locations[&system].iter().nth(0));
-        assert!(galaxy.entities.orbits.ids().next().is_none());
-        assert!(galaxy.entities.transits.ids().next().is_none());
-    }
-}
+//#[test]
+//fn quick_test() {
+//    let mut galaxy = Galaxy::default();
+//
+//    let system: SystemRow = ("Sol".to_string(), LightYears::default());
+//    let system = galaxy.state.create(system, &mut galaxy.entities.systems).entity;
+//
+//    let center = LocationCreator {
+//        system,
+//        location: Position::default(),
+//        orbit: None,
+//        transit: None,
+//    };
+//    let center = center.create(&mut galaxy.state, &mut galaxy.entities);
+//
+//    {
+//        let system = galaxy.entities.systems.verify(system).unwrap();
+//        let center = galaxy.entities.locations.verify(center).unwrap();
+//
+//        assert_eq!(system.entity, galaxy.state.location_system[&center]);
+//        assert_eq!(Some(&center.entity), galaxy.state.system_locations[&system].iter().nth(0));
+//        assert!(galaxy.entities.orbits.ids().next().is_none());
+//        assert!(galaxy.entities.transits.ids().next().is_none());
+//    }
+//}
