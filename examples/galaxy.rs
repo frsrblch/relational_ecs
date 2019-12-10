@@ -291,13 +291,8 @@ pub mod state {
         fn update(self, state: &mut Galaxy) {
             let (e, s) = state.split();
 
-            s.location_orbit.values
-                .iter()
-                .filter_map(|(loc, orbit)| {
-                    let loc = e.locations.verify(*loc)?;
-                    let orbit = e.orbits.verify(*orbit)?;
-                    Some((loc, orbit))
-                })
+            s.location_orbit
+                .verified_both(&e.locations, &e.orbits)
                 .for_each(|(_loc, orbit)| {
                     let mut _position = s.orbit_relative_position[&orbit];
                     let mut orbit = orbit;

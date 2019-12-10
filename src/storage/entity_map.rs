@@ -1,5 +1,6 @@
 use super::*;
 use rustc_hash::FxHashMap;
+use crate::entities::Allocator;
 
 #[derive(Debug, Clone)]
 pub struct EntityMap<ID: IdType, T> { pub values: FxHashMap<ID, T> }
@@ -47,5 +48,16 @@ impl<ID: IdType, T> Get<ID, T> for EntityMap<ID, T> {
 
     fn get_mut(&mut self, id: &VerifiedEntity<ID>) -> Option<&mut T> {
         self.values.get_mut(&id.entity)
+    }
+}
+
+impl<A: IdType, B: IdType> EntityMap<A, B> {
+    pub fn verified_both<'a>(&'a self, allocator_a: &'a Allocator<A>, allocator_b: &'a Allocator<B>) -> impl Iterator<Item=(VerifiedEntity<A>, VerifiedEntity<B>)> {
+        self.values.iter()
+            .filter_map(move |(a, b)| {
+                let a = allocator_a.verify(*a)?;
+                let b = allocator_b.verify(*b)?;
+                Some((a, b))
+            })
     }
 }
