@@ -25,7 +25,11 @@ pub trait Insert<ID: IdType, T> {
 }
 
 pub trait Remove<ID: IdType, T> {
-    fn remove(&mut self, id: &VerifiedEntity<ID>, value: T) -> Option<T>;
+    fn remove(&mut self, id: &VerifiedEntity<ID>);
+}
+
+pub trait RemoveFrom<ID: IdType, T> {
+    fn remove_from(&mut self, id: &VerifiedEntity<ID>, value: T) -> Option<T>;
 }
 
 pub trait Link<A: IdType, B: IdType> : Insert<A, B> + Insert<B, A> {
@@ -70,8 +74,21 @@ pub trait Lookup2<'a, 'b, A: IdType, B: IdType, C: IdType> : Lookup<'a, A, B> + 
 impl<'a, 'b, A: IdType, B: IdType, C: IdType, STATE: Lookup<'a, A, B> + Lookup<'b, B, C>> Lookup2<'a, 'b, A, B, C> for STATE {}
 
 /// Impl on the type that contains both state and entities
-pub trait Construct<ID, T> {
+pub trait Construct<ID: IdType, T> {
     fn construct(&mut self, value: T) -> ID;
+}
+
+pub trait Delete<OWNER: IdType, OWNED: IdType> : Get<OWNER, OWNED> + Remove<OWNER, OWNED> {
+    fn delete(&mut self, id: &VerifiedEntity<OWNER>, allocator: &mut Allocator<OWNED>) {
+        if let Some(owned) = self.get(id) {
+            allocator.kill(*owned);
+            self.remove(id);
+        }
+    }
+}
+
+pub trait Deconstruct<ID: IdType> {
+    fn deconstruct(&mut self, id: ID);
 }
 
 pub trait Update<T> {

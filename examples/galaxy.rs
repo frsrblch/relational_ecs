@@ -249,6 +249,32 @@ pub mod state {
         }
     }
 
+    impl Remove<BodyId, SurfaceId> for State {
+        fn remove(&mut self, id: &VerifiedEntity<BodyId>) {
+            self.body_surface.remove(id);
+        }
+    }
+    impl Delete<BodyId, SurfaceId> for State {}
+
+    impl Remove<BodyId, AtmosphereId> for State {
+        fn remove(&mut self, id: &VerifiedEntity<BodyId>) {
+            self.body_atmosphere.remove(id);
+        }
+    }
+    impl Delete<BodyId, AtmosphereId> for State {}
+
+    impl Deconstruct<BodyId> for Galaxy {
+        fn deconstruct(&mut self, id: BodyId) {
+            let (e, s) = self.split();
+
+            if let Some(body) = e.bodies.verify(id) {
+                s.delete(&body, &mut e.surfaces);
+                s.delete(&body, &mut e.atmospheres);
+                e.bodies.kill(id);
+            }
+        }
+    }
+
     pub struct OrbitPosition;
 
     impl Update<Galaxy> for OrbitPosition {

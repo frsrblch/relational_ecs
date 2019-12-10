@@ -74,8 +74,8 @@ macro_rules! link_to_many {
             }
         }
     
-        impl Remove<$id_a, $id_b> for State {
-            fn remove(&mut self, id: &VerifiedEntity<$id_a>, value: $id_b) -> Option<$id_b> {
+        impl RemoveFrom<$id_a, $id_b> for State {
+            fn remove_from(&mut self, id: &VerifiedEntity<$id_a>, value: $id_b) -> Option<$id_b> {
                 let values = &mut self.$field_a[id];
                 values.remove(&value)
             }

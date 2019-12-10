@@ -92,8 +92,8 @@ impl Insert<ShepherdId, SheepId> for State {
     }
 }
 
-impl Remove<ShepherdId, SheepId> for State {
-    fn remove(&mut self, id: &VerifiedEntity<ShepherdId>, value: SheepId) -> Option<SheepId> {
+impl RemoveFrom<ShepherdId, SheepId> for State {
+    fn remove_from(&mut self, id: &VerifiedEntity<ShepherdId>, value: SheepId) -> Option<SheepId> {
         let sheep = &mut self.shepherd_sheep[id];
         sheep.remove(&value)
     }
