@@ -183,31 +183,28 @@ pub mod state {
     
     impl Construct<BodyId, Planet> for Galaxy {
         fn construct(&mut self, planet: Planet) -> BodyId {
-            let system = self.entities.systems.verify(planet.system)
+            let (entities, state) = self.split();
+            
+            let system = entities.systems.verify(planet.system)
                 .expect("invalid system id");
 
             if let Some(parent) = &planet.orbit.parent {
-                let _parent = self.entities.orbits.verify(*parent)
+                let _parent = entities.orbits.verify(*parent)
                     .expect("invalid parent orbit");
             }
 
-            let location = self.state.create(Position::default(), &mut self.entities.locations);
-            self.state.link(&system, &location);
+            let location = state.create_and_link(&system, Position::default(), &mut entities.locations);
 
-            let orbit = self.state.create(planet.orbit, &mut self.entities.orbits);
-            self.state.link(&location, &orbit);
+            let _orbit = state.create_and_link(&location, planet.orbit, &mut entities.orbits);
 
-            let body = self.state.create(planet.body, &mut self.entities.bodies);
-            self.state.link(&location, &body);
+            let body = state.create_and_link(&location, planet.body, &mut entities.bodies);
 
             if let Some(surface) = planet.surface {
-                let surface = self.state.create(surface, &mut self.entities.surfaces);
-                self.state.link(&body, &surface);
+                let _surface = state.create_and_link(&body, surface, &mut entities.surfaces);
             }
 
             if let Some(atmosphere) = planet.atmosphere {
-                let atmosphere = self.state.create(atmosphere, &mut self.entities.atmospheres);
-                self.state.link(&body, &atmosphere);
+                let _atmosphere = state.create_and_link(&body, atmosphere, &mut entities.atmospheres);
             }
 
             body.entity
