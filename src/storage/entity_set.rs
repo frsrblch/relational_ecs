@@ -1,12 +1,13 @@
 use super::*;
 use rustc_hash::FxHashSet;
+use crate::entities::Allocator;
 
 #[derive(Debug, Clone)]
-pub struct EntitySet<ID: IdType>(FxHashSet<ID>);
+pub struct EntitySet<ID: IdType> { values: FxHashSet<ID> }
 
 impl<ID: IdType> Default for EntitySet<ID> {
     fn default() -> Self {
-        EntitySet(Default::default())
+        EntitySet { values: Default::default() }
     }
 }
 
@@ -16,19 +17,19 @@ impl<ID: IdType> EntitySet<ID> {
     }
 
     pub fn iter(&self) -> std::collections::hash_set::Iter<ID> {
-        self.0.iter()
+        self.values.iter()
     }
 
     pub fn clear(&mut self) {
-        self.0.clear();
+        self.values.clear();
     }
 
     pub fn insert(&mut self, value: ID) {
-        self.0.insert(value);
+        self.values.insert(value);
     }
 
     pub fn remove(&mut self, value: &ID) -> Option<ID> {
-        if self.0.remove(value) {
+        if self.values.remove(value) {
             Some(*value)
         } else {
             None
@@ -36,14 +37,20 @@ impl<ID: IdType> EntitySet<ID> {
     }
 
     pub fn contains(&self, value: &ID) -> bool {
-        self.0.contains(value)
+        self.values.contains(value)
     }
 
     pub fn len(&self) -> usize {
-        self.0.len()
+        self.values.len()
     }
 
     pub fn is_empty(&self) -> bool {
-        self.0.is_empty()
+        self.values.is_empty()
+    }
+
+    pub fn verified<'a>(&'a self, allocator: &'a Allocator<ID>) -> impl Iterator<Item=VerifiedEntity<ID>> {
+        self.values
+            .iter()
+            .filter_map(move |id| allocator.verify(*id))
     }
 }

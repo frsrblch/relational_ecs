@@ -55,7 +55,7 @@ pub struct State {
 impl Insert<ShepherdId, ShepherdRow> for State {
     fn insert(&mut self, id: &VerifiedEntity<ShepherdId>, value: String) {
         self.shepherd_name.insert(id, value);
-        self.shepherd_sheep.insert(id, EntitySet::new());
+        self.shepherd_sheep.insert(id, EntitySet::new {});
     }
 }
 
