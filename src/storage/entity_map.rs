@@ -39,6 +39,27 @@ impl<ID: IdType, T> EntityMap<ID, T> {
     pub fn is_empty(&self) -> bool {
         self.values.is_empty()
     }
+
+    pub fn verified<'a>(&'a self, allocator: &'a Allocator<ID>) -> impl Iterator<Item=(VerifiedEntity<ID>, &T)> {
+        self.values
+            .iter()
+            .filter_map(move |(id, t)| {
+                let id = allocator.verify(*id)?;
+                Some((id, t))
+            })
+    }
+}
+
+impl<A: IdType, B: IdType> EntityMap<A, B> {
+    pub fn verified_both<'a>(&'a self, allocator_a: &'a Allocator<A>, allocator_b: &'a Allocator<B>) -> impl Iterator<Item=(VerifiedEntity<A>, VerifiedEntity<B>)> {
+        self.values
+            .iter()
+            .filter_map(move |(a, b)| {
+                let a = allocator_a.verify(*a)?;
+                let b = allocator_b.verify(*b)?;
+                Some((a, b))
+            })
+    }
 }
 
 impl<ID: IdType, T> Get<ID, T> for EntityMap<ID, T> {
@@ -48,16 +69,5 @@ impl<ID: IdType, T> Get<ID, T> for EntityMap<ID, T> {
 
     fn get_mut(&mut self, id: &VerifiedEntity<ID>) -> Option<&mut T> {
         self.values.get_mut(&id.entity)
-    }
-}
-
-impl<A: IdType, B: IdType> EntityMap<A, B> {
-    pub fn verified_both<'a>(&'a self, allocator_a: &'a Allocator<A>, allocator_b: &'a Allocator<B>) -> impl Iterator<Item=(VerifiedEntity<A>, VerifiedEntity<B>)> {
-        self.values.iter()
-            .filter_map(move |(a, b)| {
-                let a = allocator_a.verify(*a)?;
-                let b = allocator_b.verify(*b)?;
-                Some((a, b))
-            })
     }
 }
