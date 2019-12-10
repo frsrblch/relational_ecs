@@ -50,11 +50,11 @@ pub struct State {
     pub crook_length: IndexedVec<CrookId, Length>,
     pub crook_material: IndexedVec<CrookId, Material>,
 
+    pub sheep_shepherd: IndexedVec<SheepId, ShepherdId>,
     pub sheep_position: IndexedVec<SheepId, Position>,
     pub sheep_wool: IndexedVec<SheepId, Wool>,
-    pub sheep_shepherd: IndexedVec<SheepId, ShepherdId>,
 
-    pub lost_sheep: Vec<SheepId>,
+    pub lost_sheep: EntitySet<SheepId>,
 }
 
 impl Insert<ShepherdId, ShepherdRow> for State {
@@ -89,13 +89,6 @@ impl Insert<SheepId, SheepRow> for State {
 
 impl<'a> Create<'a, SheepId, SheepRow> for State {}
 
-//impl RemoveFrom<ShepherdId, SheepId> for State {
-//    fn remove_from(&mut self, id: &VerifiedEntity<ShepherdId>, value: SheepId) -> Option<SheepId> {
-//        let sheep = &mut self.shepherd_sheep[id];
-//        sheep.remove(&value)
-//    }
-//}
-
 impl Link<ShepherdId, SheepId> for State {
     fn link(&mut self, a: &VerifiedEntity<ShepherdId>, b: &VerifiedEntity<SheepId>) {
         self.insert(b, a.entity);
@@ -117,14 +110,14 @@ impl State {
             for sheep in get_shepherds_sheep(&self.sheep_shepherd, &shepherd, &entities.sheep) {
                 let distance = self.sheep_position[&sheep];
                 if distance.magnitude() > length.0 {
-                    self.lost_sheep.push(sheep.entity);
+                    self.lost_sheep.insert(sheep.entity);
                 }
             }
         }
     }
 
     pub fn remove_lost_sheep(&mut self, entities: &mut Entities) {
-        for sheep in self.lost_sheep.drain(..) {
+        for sheep in self.lost_sheep.values.drain() {
             entities.sheep.kill(sheep);
         }
     }

@@ -3,7 +3,7 @@ use rustc_hash::FxHashSet;
 use crate::entities::Allocator;
 
 #[derive(Debug, Clone)]
-pub struct EntitySet<ID: IdType> { values: FxHashSet<ID> }
+pub struct EntitySet<ID: IdType> { pub values: FxHashSet<ID> }
 
 impl<ID: IdType> Default for EntitySet<ID> {
     fn default() -> Self {
