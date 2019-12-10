@@ -27,6 +27,12 @@ pub struct Game {
     pub entities: Entities,
 }
 
+impl Split<Entities, State> for Game {
+    fn split(&mut self) -> (&mut Entities, &mut State) {
+        (&mut self.entities, &mut self.state)
+    }
+}
+
 type ShepherdRow = String;
 
 type SheepRow = (Position, Wool);
@@ -128,7 +134,7 @@ impl State {
     }
 }
 
-pub fn get_shepherds_sheep<'a>(
+fn get_shepherds_sheep<'a>(
     sheep_shepherd: &'a IndexedVec<SheepId, ShepherdId>,
     id: &'a VerifiedEntity<ShepherdId>,
     sheep: &'a Allocator<SheepId>,
@@ -144,14 +150,16 @@ pub struct Flock {
     sheep: Vec<SheepRow>,
 }
 
-impl Flock {
-    pub fn create(self, state: &mut State, entities: &mut Entities) -> ShepherdId {
-        let shepherd = state.create(self.shepherd, &mut entities.shepherds);
+impl Construct<ShepherdId, Flock> for Game {
+    fn construct(&mut self, flock: Flock) -> ShepherdId {
+        let (entities, state) = self.split();
 
-        let crook = state.create(self.crook, &mut entities.crooks);
+        let shepherd = state.create(flock.shepherd, &mut entities.shepherds);
+
+        let crook = state.create(flock.crook, &mut entities.crooks);
         state.shepherd_crook.insert(&shepherd, crook.entity);
 
-        for row in self.sheep.into_iter() {
+        for row in flock.sheep.into_iter() {
             let sheep = state.create(row, &mut entities.sheep);
             state.link(&shepherd, &sheep);
         }
@@ -174,7 +182,7 @@ fn main() {
         ]
     };
 
-    let shepherd = shepherd.create(&mut game.state, &mut game.entities);
+    let shepherd = game.construct(shepherd);
 
     let little_bo_peep = game.entities.shepherds.verify(shepherd).unwrap();
     assert_eq!(4, game.state.count_sheep(&little_bo_peep, &game.entities.sheep));
