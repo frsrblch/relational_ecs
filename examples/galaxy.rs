@@ -230,17 +230,13 @@ pub mod state {
             let _parent = self.entities.orbits.verify(*parent)
                 .expect("Planet::create - invalid parent orbit");
 
-            let location = self.state.create(Position::default(), &mut self.entities.locations);
-            self.state.link(&system, &location);
+            let location = self.state.create_and_link(&system, Position::default(), &mut self.entities.locations);
 
-            let orbit = self.state.create(moon.orbit, &mut self.entities.orbits);
-            self.state.link(&location, &orbit);
+            let orbit = self.state.create_and_link(&location, moon.orbit, &mut self.entities.orbits);
 
-            let body = self.state.create(moon.body, &mut self.entities.bodies);
-            self.state.link(&location, &body);
+            let body = self.state.create_and_linkeate(&location, moon.body, &mut self.entities.bodies);
 
-            let surface = self.state.create(moon.surface, &mut self.entities.surfaces);
-            self.state.link(&body, &surface);
+            let surface = self.state.create_and_link(&location, moon.surface, &mut self.entities.surfaces);
 
             body.entity
         }
