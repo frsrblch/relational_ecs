@@ -1,6 +1,7 @@
 use std::marker::PhantomData;
 use super::*;
 use std::ops::{Index, IndexMut};
+use crate::entities::Allocator;
 
 #[derive(Debug)]
 pub struct IndexedVec<ID, T> {
@@ -61,6 +62,22 @@ impl<'a, ID: IdType, T> Index<&'a VerifiedEntity<'a, ID>> for IndexedVec<ID, T> 
 impl<'a, ID: IdType, T> IndexMut<&'a VerifiedEntity<'a, ID>> for IndexedVec<ID, T> {
     fn index_mut(&mut self, index: &'a VerifiedEntity<'a, ID>) -> &mut Self::Output {
         &mut self.values[index.index()]
+    }
+}
+
+impl<A: IdType, B: IdType> IndexedVec<A, B> {
+    pub fn verified_both<'a>(
+        &'a self,
+        allocator_a: &'a Allocator<A>,
+        allocator_b: &'a Allocator<B>,
+    ) -> impl Iterator<Item=(VerifiedEntity<A>, VerifiedEntity<B>)> {
+        allocator_a
+            .ids()
+            .filter_map(move |a| {
+                let b = self[&a];
+                let b = allocator_b.verify(b)?;
+                Some((a, b))
+            })
     }
 }
 
