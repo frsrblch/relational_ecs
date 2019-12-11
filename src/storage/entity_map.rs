@@ -3,15 +3,15 @@ use rustc_hash::FxHashMap;
 use crate::entities::Allocator;
 
 #[derive(Debug, Clone)]
-pub struct EntityMap<ID: IdType, T> { pub values: FxHashMap<ID, T> }
+pub struct EntityMap<ID: Id, T> { pub values: FxHashMap<ID, T> }
 
-impl<ID: IdType, T> Default for EntityMap<ID, T> {
+impl<ID: Id, T> Default for EntityMap<ID, T> {
     fn default() -> Self {
         EntityMap { values: Default::default() }
     }
 }
 
-impl<ID: IdType, T> EntityMap<ID, T> {
+impl<ID: Id, T> EntityMap<ID, T> {
     pub fn new() -> Self {
         Self::default()
     }
@@ -63,7 +63,7 @@ impl<ID: IdType, T> EntityMap<ID, T> {
     }
 }
 
-impl<A: IdType, B: IdType> EntityMap<A, B> {
+impl<A: Id, B: Id> EntityMap<A, B> {
     pub fn retain_verified_both<'a>(
         &'a mut self,
         allocator_a: &'a Allocator<A>,
@@ -96,7 +96,7 @@ impl<A: IdType, B: IdType> EntityMap<A, B> {
     }
 }
 
-impl<ID: IdType, T> Get<ID, T> for EntityMap<ID, T> {
+impl<ID: Id, T> Get<ID, T> for EntityMap<ID, T> {
     fn get(&self, id: &VerifiedEntity<ID>) -> Option<&T> {
         self.values.get(&id.entity)
     }

@@ -18,7 +18,7 @@ impl<ID, T> Default for IndexedVec<ID, T> {
     }
 }
 
-impl<ID: IdType, T> IndexedVec<ID, T> {
+impl<ID: Id, T> IndexedVec<ID, T> {
     pub fn new() -> Self {
         Default::default()
     }
@@ -31,7 +31,7 @@ impl<ID: IdType, T> IndexedVec<ID, T> {
     }
 }
 
-impl<ID: IdType, T> Get<ID, T> for IndexedVec<ID, T> {
+impl<ID: Id, T> Get<ID, T> for IndexedVec<ID, T> {
     fn get(&self, id: &VerifiedEntity<ID>) -> Option<&T> {
         self.values.get(id.index())
     }
@@ -41,7 +41,7 @@ impl<ID: IdType, T> Get<ID, T> for IndexedVec<ID, T> {
     }
 }
 
-impl<ID: IdType, T> Insert<ID, T> for IndexedVec<ID, T> {
+impl<ID: Id, T> Insert<ID, T> for IndexedVec<ID, T> {
     fn insert(&mut self, id: &VerifiedEntity<ID>, value: T) {
         match self.values.len() {
             len if len > id.index() => self.values[id.index()] = value,
@@ -51,7 +51,7 @@ impl<ID: IdType, T> Insert<ID, T> for IndexedVec<ID, T> {
     }
 }
 
-impl<'a, ID: IdType, T> Index<&'a VerifiedEntity<'a, ID>> for IndexedVec<ID, T> {
+impl<'a, ID: Id, T> Index<&'a VerifiedEntity<'a, ID>> for IndexedVec<ID, T> {
     type Output = T;
 
     fn index(&self, index: &'a VerifiedEntity<'a, ID>) -> &Self::Output {
@@ -59,13 +59,13 @@ impl<'a, ID: IdType, T> Index<&'a VerifiedEntity<'a, ID>> for IndexedVec<ID, T> 
     }
 }
 
-impl<'a, ID: IdType, T> IndexMut<&'a VerifiedEntity<'a, ID>> for IndexedVec<ID, T> {
+impl<'a, ID: Id, T> IndexMut<&'a VerifiedEntity<'a, ID>> for IndexedVec<ID, T> {
     fn index_mut(&mut self, index: &'a VerifiedEntity<'a, ID>) -> &mut Self::Output {
         &mut self.values[index.index()]
     }
 }
 
-impl<A: IdType, B: IdType> IndexedVec<A, Option<B>> {
+impl<A: Id, B: Id> IndexedVec<A, Option<B>> {
     pub fn retain(&mut self, allocator: &Allocator<B>) {
         self.values
             .iter_mut()

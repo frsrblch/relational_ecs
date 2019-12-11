@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 use std::num::NonZeroU32;
 use bit_set::BitSet;
-use crate::traits::IdType;
+use crate::traits::{Id, IdType};
 
 #[derive(Debug, Copy, Clone, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Generation(NonZeroU32);
@@ -24,14 +24,14 @@ impl Default for Generation {
 }
 
 #[derive(Debug)]
-pub struct Allocator<ID: IdType> {
+pub struct Allocator<ID: Id> {
     generations: Vec<Generation>,
-    dead: Vec<usize>, // TODO replace with u32
+    dead: Vec<usize>,
     live: BitSet,
     marker: PhantomData<ID>,
 }
 
-impl<ID: IdType> Default for Allocator<ID> {
+impl<ID: Id> Default for Allocator<ID> {
     fn default() -> Self {
         Self {
             generations: vec![],
@@ -43,10 +43,6 @@ impl<ID: IdType> Default for Allocator<ID> {
 }
 
 impl<ID: IdType> Allocator<ID> {
-    pub fn new() -> Self {
-        Default::default()
-    }
-
     pub fn create_entity(&mut self) -> VerifiedEntity<ID> {
         if let Some(index) = self.dead.pop() {
             if let Some(gen) = self.generations.get(index as usize) {
@@ -66,6 +62,19 @@ impl<ID: IdType> Allocator<ID> {
 
     fn get_new_index(&mut self) -> usize {
         self.generations.len()
+    }
+
+    pub fn ids(&self) -> impl Iterator<Item = VerifiedEntity<ID>> {
+        self.live.iter().map(move |index| {
+            let gen = self.generations[index];
+            VerifiedEntity::assert_valid(ID::create(index, gen))
+        })
+    }
+}
+
+impl<ID: Id> Allocator<ID> {
+    pub fn new() -> Self {
+        Default::default()
     }
 
     pub fn is_alive(&self, entity: ID) -> bool {
@@ -88,13 +97,6 @@ impl<ID: IdType> Allocator<ID> {
         None
     }
 
-    pub fn ids(&self) -> impl Iterator<Item = VerifiedEntity<ID>> {
-        self.live.iter().map(move |index| {
-            let gen = self.generations[index];
-            VerifiedEntity::assert_valid(ID::create(index, gen))
-        })
-    }
-
     pub fn verify(&self, entity: ID) -> Option<VerifiedEntity<ID>> {
         if self.is_alive(entity) {
             Some(VerifiedEntity::assert_valid(entity))
@@ -105,12 +107,12 @@ impl<ID: IdType> Allocator<ID> {
 }
 
 #[derive(Debug)]
-pub struct VerifiedEntity<'a,ID: IdType> {
+pub struct VerifiedEntity<'a,ID: Id> {
     pub entity: ID,
     marker: PhantomData<&'a Allocator<ID>>,
 }
 
-impl<'a, ID: IdType> VerifiedEntity<'a, ID> {
+impl<'a, ID: Id> VerifiedEntity<'a, ID> {
     pub fn assert_valid(entity: ID) -> Self {
         VerifiedEntity { entity, marker: PhantomData }
     }

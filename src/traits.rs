@@ -1,38 +1,41 @@
 use std::hash::Hash;
 use crate::entities::*;
 
-pub trait IdType: Copy + Eq + Hash + Ord {
+pub trait IdType: Id {
     fn new(index: u32) -> Self;
     fn create(index: usize, gen: Generation) -> Self;
+}
+
+pub trait Id: Copy + Eq + Hash + Ord {
     fn index(&self) -> usize;
     fn generation(&self) -> Generation;
 }
 
-pub trait Entities<ID: IdType> {
+pub trait Entities<ID: Id> {
     fn verify(&self, id: ID) -> Option<VerifiedEntity<ID>>;
     fn is_alive(&self, id: ID) -> bool;
     fn create(&mut self) -> VerifiedEntity<ID>;
     fn delete(&mut self, id: ID);
 }
 
-pub trait Get<ID: IdType, T> {
+pub trait Get<ID: Id, T> {
     fn get(&self, id: &VerifiedEntity<ID>) -> Option<&T>;
     fn get_mut(&mut self, id: &VerifiedEntity<ID>) -> Option<&mut T>;
 }
 
-pub trait Insert<ID: IdType, T> {
+pub trait Insert<ID: Id, T> {
     fn insert(&mut self, id: &VerifiedEntity<ID>, value: T);
 }
 
-pub trait Remove<ID: IdType, T> {
+pub trait Remove<ID: Id, T> {
     fn remove(&mut self, id: &VerifiedEntity<ID>);
 }
 
-pub trait RemoveFrom<ID: IdType, T> {
+pub trait RemoveFrom<ID: Id, T> {
     fn remove_from(&mut self, id: &VerifiedEntity<ID>, value: T) -> Option<T>;
 }
 
-pub trait Link<A: IdType, B: IdType> {
+pub trait Link<A: Id, B: Id> {
     fn link(&mut self, a: &VerifiedEntity<A>, b: &VerifiedEntity<B>);
 }
 
@@ -46,7 +49,7 @@ pub trait Create<'a, ID: IdType, T> : Insert<ID, T> {
     }
 }
 
-pub trait CreateAndLink<'a, A: IdType, B: IdType, T> : Create<'a, B, T> + Link<A, B> {
+pub trait CreateAndLink<'a, A: Id, B: IdType, T> : Create<'a, B, T> + Link<A, B> {
     fn create_and_link(&mut self, owner: &VerifiedEntity<A>, row: T, allocator: &'a mut Allocator<B>) -> VerifiedEntity<'a, B> {
         let id = self.create(row, allocator);
         self.link(owner, &id);
@@ -54,9 +57,9 @@ pub trait CreateAndLink<'a, A: IdType, B: IdType, T> : Create<'a, B, T> + Link<A
     }
 }
 
-impl<'a, A: IdType, B: IdType, T, S: Create<'a, B, T> + Link<A, B>> CreateAndLink<'a, A, B, T> for S {}
+impl<'a, A: Id, B: IdType, T, S: Create<'a, B, T> + Link<A, B>> CreateAndLink<'a, A, B, T> for S {}
 
-pub trait Lookup<'a, A: IdType, B: IdType> : Get<A, B> {
+pub trait Lookup<'a, A: Id, B: Id> : Get<A, B> {
     fn lookup(&self, a: A, alloc_a: &Allocator<A>, alloc_b: &'a Allocator<B>) -> Option<VerifiedEntity<'a, B>> {
         alloc_a.verify(a).and_then(|a| self.lookup_verified(&a, alloc_b))
     }
@@ -67,7 +70,7 @@ pub trait Lookup<'a, A: IdType, B: IdType> : Get<A, B> {
     }
 }
 
-pub trait Lookup2<'a, 'b, A: IdType, B: IdType, C: IdType> : Lookup<'a, A, B> + Lookup<'b, B, C> {
+pub trait Lookup2<'a, 'b, A: Id, B: Id, C: Id> : Lookup<'a, A, B> + Lookup<'b, B, C> {
     fn lookup2(
         &self,
         a: A,
@@ -80,14 +83,14 @@ pub trait Lookup2<'a, 'b, A: IdType, B: IdType, C: IdType> : Lookup<'a, A, B> + 
     }
 }
 
-                       impl < 'a, 'b, A: IdType, B: IdType, C: IdType, STATE: Lookup<'a, A, B> + Lookup<'b, B, C>> Lookup2<'a, 'b, A, B, C> for STATE {}
+impl < 'a, 'b, A: Id, B: Id, C: Id, STATE: Lookup<'a, A, B> + Lookup<'b, B, C>> Lookup2<'a, 'b, A, B, C> for STATE {}
 
 /// Impl on the type that contains both state and entities
-pub trait Construct<ID: IdType, T> {
+pub trait Construct<ID: Id, T> {
     fn construct(&mut self, value: T) -> ID;
 }
 
-pub trait Delete<OWNER: IdType, OWNED: IdType> : Get<OWNER, OWNED> + Remove<OWNER, OWNED> {
+pub trait Delete<OWNER: Id, OWNED: Id> : Get<OWNER, OWNED> + Remove<OWNER, OWNED> {
     fn delete(&mut self, id: &VerifiedEntity<OWNER>, allocator: &mut Allocator<OWNED>) {
         if let Some(owned) = self.get(id) {
             allocator.kill(*owned);
@@ -96,7 +99,7 @@ pub trait Delete<OWNER: IdType, OWNED: IdType> : Get<OWNER, OWNED> + Remove<OWNE
     }
 }
 
-pub trait Deconstruct<ID: IdType> {
+pub trait Deconstruct<ID: Id> {
     fn deconstruct(&mut self, id: ID);
 }
 
