@@ -65,6 +65,20 @@ impl<'a, ID: IdType, T> IndexMut<&'a VerifiedEntity<'a, ID>> for IndexedVec<ID, 
     }
 }
 
+impl<A: IdType, B: IdType> IndexedVec<A, Option<B>> {
+    pub fn retain(&mut self, allocator: &Allocator<B>) {
+        self.values
+            .iter_mut()
+            .for_each(|b| {
+                if let Some(inner) = b {
+                    if !allocator.is_alive(*inner) {
+                        *b = None;
+                    }
+                }
+            })
+    }
+}
+
 impl<A: IdType, B: IdType> IndexedVec<A, B> {
     pub fn verified_both<'a>(
         &'a self,
