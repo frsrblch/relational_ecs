@@ -9,7 +9,7 @@ pub struct IndexedVec<ID, T> {
     marker: PhantomData<ID>,
 }
 
-impl<ID, T> Default for IndexedVec<ID, T> {
+impl<ID: Id, T> Default for IndexedVec<ID, T> {
     fn default() -> Self {
         Self {
             values: vec![],
@@ -79,7 +79,7 @@ impl<A: Id, B: Id> IndexedVec<A, Option<B>> {
     }
 }
 
-impl<A: IdType, B: IdType> IndexedVec<A, B> {
+impl<A: IdType, B: Id> IndexedVec<A, B> {
     pub fn verified_both<'a>(
         &'a self,
         allocator_a: &'a Allocator<A>,

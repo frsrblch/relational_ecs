@@ -31,7 +31,7 @@ pub struct Allocator<ID: Id> {
     marker: PhantomData<ID>,
 }
 
-impl<ID: Id> Default for Allocator<ID> {
+impl<ID: IdType> Default for Allocator<ID> {
     fn default() -> Self {
         Self {
             generations: vec![],
@@ -43,6 +43,10 @@ impl<ID: Id> Default for Allocator<ID> {
 }
 
 impl<ID: IdType> Allocator<ID> {
+    pub fn new() -> Self {
+        Default::default()
+    }
+
     pub fn create_entity(&mut self) -> VerifiedEntity<ID> {
         if let Some(index) = self.dead.pop() {
             if let Some(gen) = self.generations.get(index as usize) {
@@ -73,10 +77,6 @@ impl<ID: IdType> Allocator<ID> {
 }
 
 impl<ID: Id> Allocator<ID> {
-    pub fn new() -> Self {
-        Default::default()
-    }
-
     pub fn is_alive(&self, entity: ID) -> bool {
         if let Some(gen) = self.generations.get(entity.index()) {
             entity.generation() == *gen
