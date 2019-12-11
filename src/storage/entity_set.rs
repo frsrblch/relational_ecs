@@ -48,7 +48,18 @@ impl<ID: IdType> EntitySet<ID> {
         self.values.is_empty()
     }
 
-    pub fn verified<'a>(&'a self, allocator: &'a Allocator<ID>) -> impl Iterator<Item=VerifiedEntity<ID>> {
+    pub fn retain(&mut self, allocator: &Allocator<ID>) {
+        self.values.retain(|id| allocator.is_alive(*id));
+    }
+
+    pub fn retain_verified<'a>(&'a mut self, allocator: &'a Allocator<ID>) -> impl Iterator<Item=VerifiedEntity<'a, ID>> {
+        self.retain(allocator);
+        self.values
+            .iter()
+            .map(|id| VerifiedEntity::assert_valid(*id))
+    }
+
+    pub fn verified<'a>(&'a self, allocator: &'a Allocator<ID>) -> impl Iterator<Item=VerifiedEntity<'a, ID>> {
         self.values
             .iter()
             .filter_map(move |id| allocator.verify(*id))

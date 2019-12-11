@@ -40,7 +40,20 @@ impl<ID: IdType, T> EntityMap<ID, T> {
         self.values.is_empty()
     }
 
-    pub fn verified<'a>(&'a self, allocator: &'a Allocator<ID>) -> impl Iterator<Item=(VerifiedEntity<ID>, &T)> {
+    pub fn retain(&mut self, allocator: &Allocator<ID>) {
+        self.values.retain(|id, _| allocator.is_alive(*id))
+    }
+
+    pub fn retain_verified<'a>(&'a mut self, allocator: &'a Allocator<ID>) -> impl Iterator<Item=(VerifiedEntity<'a, ID>, &T)> {
+        self.retain(allocator);
+        self.values
+            .iter()
+            .map(|(id, t)| {
+                (VerifiedEntity::assert_valid(*id), t)
+            })
+    }
+
+    pub fn verified<'a>(&'a self, allocator: &'a Allocator<ID>) -> impl Iterator<Item=(VerifiedEntity<'a, ID>, &T)> {
         self.values
             .iter()
             .filter_map(move |(id, t)| {
@@ -51,7 +64,24 @@ impl<ID: IdType, T> EntityMap<ID, T> {
 }
 
 impl<A: IdType, B: IdType> EntityMap<A, B> {
-    pub fn verified_both<'a>(&'a self, allocator_a: &'a Allocator<A>, allocator_b: &'a Allocator<B>) -> impl Iterator<Item=(VerifiedEntity<A>, VerifiedEntity<B>)> {
+    pub fn retain_verified_both<'a>(
+        &'a mut self,
+        allocator_a: &'a Allocator<A>,
+        allocator_b: &'a Allocator<B>,
+    ) -> impl Iterator<Item=(VerifiedEntity<'a, A>, VerifiedEntity<'a, B>)> {
+        self.retain_both(allocator_a, allocator_b);
+        self.values
+            .iter()
+            .map(|(a, b)| {
+                (VerifiedEntity::assert_valid(*a), VerifiedEntity::assert_valid(*b))
+            })
+    }
+
+    pub fn verified_both<'a>(
+        &'a self,
+        allocator_a: &'a Allocator<A>,
+        allocator_b: &'a Allocator<B>,
+    ) -> impl Iterator<Item=(VerifiedEntity<'a, A>, VerifiedEntity<'a, B>)> {
         self.values
             .iter()
             .filter_map(move |(a, b)| {
@@ -59,6 +89,10 @@ impl<A: IdType, B: IdType> EntityMap<A, B> {
                 let b = allocator_b.verify(*b)?;
                 Some((a, b))
             })
+    }
+
+    pub fn retain_both(&mut self, allocator_a: &Allocator<A>, allocator_b: &Allocator<B>) {
+        self.values.retain(|a, b| allocator_a.is_alive(*a) && allocator_b.is_alive(*b));
     }
 }
 
