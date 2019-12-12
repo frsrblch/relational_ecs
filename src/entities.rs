@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 use std::num::NonZeroU32;
 use bit_set::BitSet;
-use crate::traits::{Id, IdType};
+use crate::traits::IdType;
 
 #[derive(Debug, Copy, Clone, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Generation(NonZeroU32);
@@ -24,7 +24,7 @@ impl Default for Generation {
 }
 
 #[derive(Debug)]
-pub struct Allocator<ID: Id> {
+pub struct Allocator<ID: IdType> {
     generations: Vec<Generation>,
     dead: Vec<usize>,
     live: BitSet,
@@ -74,27 +74,25 @@ impl<ID: IdType> Allocator<ID> {
             VerifiedEntity::assert_valid(ID::create(index, gen))
         })
     }
-}
 
-impl<ID: Id> Allocator<ID> {
+    pub fn kill(&mut self, id: ID) -> Option<()> {
+        if self.is_alive(id) {
+            let gen = &mut self.generations[id.index()];
+            *gen = gen.next();
+            self.dead.push(id.index());
+            self.live.remove(id.index());
+            return Some(());
+        }
+
+        None
+    }
+
     pub fn is_alive(&self, entity: ID) -> bool {
         if let Some(gen) = self.generations.get(entity.index()) {
             entity.generation() == *gen
         } else {
             false
         }
-    }
-
-    pub fn kill(&mut self, entity: ID) -> Option<()> {
-        if self.is_alive(entity) {
-            let gen = &mut self.generations[entity.index()];
-            *gen = gen.next();
-            self.dead.push(entity.index());
-            self.live.remove(entity.index());
-            return Some(());
-        }
-
-        None
     }
 
     pub fn verify(&self, entity: ID) -> Option<VerifiedEntity<ID>> {
@@ -107,18 +105,14 @@ impl<ID: Id> Allocator<ID> {
 }
 
 #[derive(Debug)]
-pub struct VerifiedEntity<'a,ID: Id> {
+pub struct VerifiedEntity<'a,ID: IdType> {
     pub entity: ID,
     marker: PhantomData<&'a Allocator<ID>>,
 }
 
-impl<'a, ID: Id> VerifiedEntity<'a, ID> {
+impl<'a, ID: IdType> VerifiedEntity<'a, ID> {
     pub fn assert_valid(entity: ID) -> Self {
         VerifiedEntity { entity, marker: PhantomData }
-    }
-
-    pub fn index(&self) -> usize {
-        self.entity.index()
     }
 }
 

@@ -12,9 +12,7 @@ macro_rules! id_type {
             fn create(index: usize, gen: $crate::entities::Generation) -> Self {
                 Self(index as u32, gen)
             }
-        }
 
-        impl $crate::traits::Id for $type_name {
             fn index(&self) -> usize {
                 self.0 as usize
             }

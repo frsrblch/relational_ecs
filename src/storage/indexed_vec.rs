@@ -33,16 +33,17 @@ impl<ID: IdType, T> IndexedVec<ID, T> {
 
 impl<ID: IdType, T> Get<ID, T> for IndexedVec<ID, T> {
     fn get(&self, id: &VerifiedEntity<ID>) -> Option<&T> {
-        self.values.get(id.index())
+        self.values.get(id.entity.index())
     }
 
     fn get_mut(&mut self, id: &VerifiedEntity<ID>) -> Option<&mut T> {
-        self.values.get_mut(id.index())
+        self.values.get_mut(id.entity.index())
     }
 }
 
 impl<ID: IdType, T> Insert<ID, T> for IndexedVec<ID, T> {
     fn insert(&mut self, id: &VerifiedEntity<ID>, value: T) {
+        let id = id.entity;
         match self.values.len() {
             len if len > id.index() => self.values[id.index()] = value,
             len if len == id.index() => self.values.push(value),
@@ -55,17 +56,17 @@ impl<'a, ID: IdType, T> Index<&'a VerifiedEntity<'a, ID>> for IndexedVec<ID, T> 
     type Output = T;
 
     fn index(&self, index: &'a VerifiedEntity<'a, ID>) -> &Self::Output {
-        &self.values[index.index()]
+        &self.values[index.entity.index()]
     }
 }
 
 impl<'a, ID: IdType, T> IndexMut<&'a VerifiedEntity<'a, ID>> for IndexedVec<ID, T> {
     fn index_mut(&mut self, index: &'a VerifiedEntity<'a, ID>) -> &mut Self::Output {
-        &mut self.values[index.index()]
+        &mut self.values[index.entity.index()]
     }
 }
 
-impl<A: IdType, B: Id> IndexedVec<A, Option<B>> {
+impl<A: IdType, B: IdType> IndexedVec<A, Option<B>> {
     pub fn retain(&mut self, allocator: &Allocator<B>) {
         self.values
             .iter_mut()
@@ -79,7 +80,7 @@ impl<A: IdType, B: Id> IndexedVec<A, Option<B>> {
     }
 }
 
-impl<A: IdType, B: Id> IndexedVec<A, B> {
+impl<A: IdType, B: IdType> IndexedVec<A, B> {
     pub fn verified_both<'a>(
         &'a self,
         allocator_a: &'a Allocator<A>,
