@@ -47,7 +47,7 @@ impl<ID: IdType, T> Insert<ID, T> for IndexedVec<ID, T> {
         match self.values.len() {
             len if len > id.index() => self.values[id.index()] = value,
             len if len == id.index() => self.values.push(value),
-            _ => panic!("entity index out of bounds"),
+            _ => panic!(format!("entity index out of bounds: {:?} len: {}", id, self.values.len())),
         };
     }
 }
