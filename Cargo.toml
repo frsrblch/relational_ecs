@@ -10,8 +10,15 @@ edition = "2018"
 bit-set = "0.5.1"
 rustc-hash = "1.0.1"
 
+[dev-dependencies]
+criterion = "0.3.0"
+
 [[example]]
 name = "simple"
 
 [[example]]
 name = "galaxy"
+
+[[bench]]
+name = "benchmarks"
+harness = false

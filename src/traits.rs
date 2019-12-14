@@ -1,7 +1,8 @@
 use std::hash::Hash;
 use crate::entities::*;
+use std::fmt::Debug;
 
-pub trait IdType: Copy + Eq + Hash + Ord {
+pub trait IdType: Debug + Copy + Eq + Hash + Ord {
     fn new(index: u32) -> Self;
     fn create(index: usize, gen: Generation) -> Self;
     fn index(&self) -> usize;

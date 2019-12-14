@@ -1,6 +1,5 @@
 use std::marker::PhantomData;
 use std::num::NonZeroU32;
-use bit_set::BitSet;
 use crate::traits::IdType;
 
 #[derive(Debug, Copy, Clone, Hash, Eq, PartialEq, Ord, PartialOrd)]
@@ -27,8 +26,7 @@ impl Default for Generation {
 pub struct Allocator<ID: IdType> {
     generations: Vec<Generation>,
     dead: Vec<usize>,
-    live: BitSet,
-    marker: PhantomData<ID>,
+    living: Vec<Option<ID>>,
 }
 
 impl<ID: IdType> Default for Allocator<ID> {
@@ -36,8 +34,7 @@ impl<ID: IdType> Default for Allocator<ID> {
         Self {
             generations: vec![],
             dead: vec![],
-            live: BitSet::new(),
-            marker: PhantomData,
+            living: vec![],
         }
     }
 }
@@ -50,15 +47,15 @@ impl<ID: IdType> Allocator<ID> {
     pub fn create_entity(&mut self) -> VerifiedEntity<ID> {
         if let Some(index) = self.dead.pop() {
             if let Some(gen) = self.generations.get(index as usize) {
-                self.live.insert(index);
                 let entity = ID::create(index, *gen);
+                self.living[index] = Some(entity);
                 return VerifiedEntity::assert_valid(entity)
             }
         }
 
         let index = self.get_new_index();
-        self.live.insert(index);
         let entity = ID::new(index as u32);
+        self.living.push(Some(entity));
         self.generations.push(entity.generation());
 
         VerifiedEntity::assert_valid(entity)
@@ -69,10 +66,10 @@ impl<ID: IdType> Allocator<ID> {
     }
 
     pub fn ids(&self) -> impl Iterator<Item = VerifiedEntity<ID>> {
-        self.live.iter().map(move |index| {
-            let gen = self.generations[index];
-            VerifiedEntity::assert_valid(ID::create(index, gen))
-        })
+        self.living.iter()
+            .filter_map(|id| {
+                id.map(|i| VerifiedEntity::assert_valid(i))
+            })
     }
 
     pub fn kill(&mut self, id: ID) -> Option<()> {
@@ -80,7 +77,7 @@ impl<ID: IdType> Allocator<ID> {
             let gen = &mut self.generations[id.index()];
             *gen = gen.next();
             self.dead.push(id.index());
-            self.live.remove(id.index());
+            self.living[id.index()] = None;
             return Some(());
         }
 
