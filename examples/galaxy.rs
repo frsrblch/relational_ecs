@@ -271,7 +271,7 @@ pub mod state {
     pub struct OrbitPosition;
 
     impl Update<Galaxy> for OrbitPosition {
-        fn update(self, galaxy: &mut Galaxy) {
+        fn update(galaxy: &mut Galaxy) {
             let (e, s) = galaxy.split();
 
             e.orbits.ids()
@@ -288,7 +288,7 @@ pub mod state {
     pub struct LocationPosition;
 
     impl Update<Galaxy> for LocationPosition {
-        fn update(self, state: &mut Galaxy) {
+        fn update(state: &mut Galaxy) {
             let (e, s) = state.split();
 
             s.location_orbit

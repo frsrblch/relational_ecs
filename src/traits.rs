@@ -101,7 +101,7 @@ pub trait Deconstruct<ID: IdType> {
 }
 
 pub trait Update<T> {
-    fn update(self, state: &mut T);
+    fn update(state: &mut T);
 }
 
 pub trait  Split<E, S> {
