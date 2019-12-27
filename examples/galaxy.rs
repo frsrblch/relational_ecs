@@ -58,7 +58,7 @@ pub mod state {
     }
 
     pub type SystemRow = (String, LightYears);
-    pub type LocationRow = (Position);
+    pub type LocationRow = Position;
 
     pub struct OrbitRow {
         pub radius: Radius,
