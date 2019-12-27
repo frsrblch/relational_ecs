@@ -46,7 +46,7 @@ impl<ID: IdType> Allocator<ID> {
 
     pub fn create_entity(&mut self) -> VerifiedEntity<ID> {
         if let Some(index) = self.dead.pop() {
-            if let Some(gen) = self.generations.get(index as usize) {
+            if let Some(gen) = self.generations.get(index) {
                 let entity = ID::create(index, *gen);
                 self.living[index] = Some(entity);
                 return VerifiedEntity::assert_valid(entity)
