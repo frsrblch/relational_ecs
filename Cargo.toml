@@ -10,6 +10,11 @@ edition = "2018"
 bit-set = "0.5.1"
 rustc-hash = "1.0.1"
 
+[profile.release]
+opt-level = 3
+codegen-units = 1
+debug = 2
+
 [dev-dependencies]
 criterion = "0.3.0"
 
