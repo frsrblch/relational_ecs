@@ -4,10 +4,7 @@ use std::marker::PhantomData;
 use crate::allocators::FlexAllocator;
 use std::cmp::Ordering;
 use std::fmt::{Formatter, Error, Display};
-
-pub trait IdIndex<T>: Display {
-    fn index(&self) -> usize;
-}
+use crate::traits_new::IdIndex;
 
 #[derive(Debug)]
 pub struct Id<T> {
@@ -65,8 +62,13 @@ impl<T> Id<T> {
 }
 
 impl<T> IdIndex<T> for Id<T> {
+    type Id = Self;
     fn index(&self) -> usize {
         self.index as usize
+    }
+
+    fn id(&self) -> Self::Id {
+        *self
     }
 }
 
@@ -147,7 +149,12 @@ impl<'a, T> Display for ValidGenId<'a, T> {
 }
 
 impl<'a, T> IdIndex<T> for ValidGenId<'a, T> {
+    type Id = GenId<T>;
     fn index(&self) -> usize {
         self.id.id.index()
+    }
+
+    fn id(&self) -> Self::Id {
+        self.id
     }
 }

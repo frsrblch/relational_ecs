@@ -1,4 +1,4 @@
-use crate::ids::IdIndex;
+use crate::traits_new::IdIndex;
 use std::marker::PhantomData;
 use std::fmt::Debug;
 

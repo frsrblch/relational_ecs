@@ -1,11 +1,7 @@
 use crate::ids::*;
 use bit_set::BitSet;
 use crate::entities::Generation;
-
-pub trait Allocator<'a, T> {
-    type Id;
-    fn create(&'a mut self) -> Self::Id;
-}
+use crate::traits_new::{Allocator, IdIndex};
 
 #[derive(Debug, Clone)]
 pub struct FixedAllocator<T> {
