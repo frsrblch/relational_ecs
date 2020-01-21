@@ -1,9 +1,16 @@
 use std::marker::PhantomData;
 use std::num::NonZeroU32;
 use crate::traits::IdType;
+use std::fmt::{Display, Formatter, Error};
 
 #[derive(Debug, Copy, Clone, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Generation(NonZeroU32);
+
+impl Display for Generation {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        write!(f, "{}", self.0.get())
+    }
+}
 
 impl Generation {
     pub fn next(self) -> Self {

@@ -3,3 +3,6 @@ pub mod entities;
 pub mod traits;
 pub mod storage;
 pub mod prelude;
+
+pub mod ids;
+pub mod allocators;

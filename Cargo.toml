@@ -24,6 +24,9 @@ name = "simple"
 [[example]]
 name = "galaxy"
 
+[[example]]
+name = "generic"
+
 [[bench]]
 name = "benchmarks"
 harness = false

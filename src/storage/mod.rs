@@ -8,3 +8,7 @@ pub use self::entity_map::EntityMap;
 mod indexed_vec;
 mod entity_set;
 mod entity_map;
+
+pub use self::component::Component;
+
+mod component;
