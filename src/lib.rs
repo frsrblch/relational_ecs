@@ -6,3 +6,4 @@ pub mod prelude;
 
 pub mod ids;
 pub mod allocators;
+pub mod traits_new;
