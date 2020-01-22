@@ -17,7 +17,7 @@ pub trait Arena<'a>: Sized {
 }
 
 pub trait Insert<'a>: Arena<'a> {
-    fn insert(&mut self, id: &impl IdIndex<Self>, value: Self::Row);
+    fn insert(&mut self, id: &<<Self as Arena<'a>>::Allocator as Allocator<'a, Self>>::Id, value: Self::Row);
 }
 
 pub trait Create<'a>: Insert<'a> {

@@ -1,4 +1,4 @@
-use crate::traits_new::IdIndex;
+use crate::traits_new::*;
 use std::marker::PhantomData;
 use std::fmt::Debug;
 
@@ -17,10 +17,10 @@ impl<ID, T> Default for Component<ID, T> {
     }
 }
 
-impl<ID, T> Component<ID, T> {
+impl<'a, ID: Arena<'a>, T> Component<ID, T> {
     pub fn new() -> Self { Default::default() }
 
-    pub fn insert(&mut self, id: &impl IdIndex<ID>, value: T) {
+    pub fn insert(&mut self, id: &<ID::Allocator as Allocator<'a, ID>>::Id, value: T) {
         match id.index() {
             index if index < self.values.len() => self.values[index] = value,
             index if index == self.values.len() => self.values.push(value),
@@ -28,11 +28,11 @@ impl<ID, T> Component<ID, T> {
         }
     }
 
-    pub fn get(&self, id: &impl IdIndex<ID>) -> &T {
+    pub fn get(&self, id: &<ID::Allocator as Allocator<'a, ID>>::Id) -> &T {
         self.values.get(id.index()).unwrap()
     }
 
-    pub fn get_mut(&mut self, id: &impl IdIndex<ID>) -> &mut T {
+    pub fn get_mut(&mut self, id: &<ID::Allocator as Allocator<'a, ID>>::Id) -> &mut T {
         self.values.get_mut(id.index()).unwrap()
     }
 }
