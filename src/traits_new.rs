@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 pub trait IdIndex {
     type Arena;
-    type Id: Display + Sized;
+    type Id: Display;
 
     fn index(&self) -> usize;
     fn id(&self) -> Self::Id;
@@ -33,7 +33,7 @@ pub trait Arena: Sized {
 }
 
 pub trait Construct<ID, T> {
-    type Id: IdIndex<Arena=ID> + Sized;
+    type Id: IdIndex<Arena=ID>;
 
     fn construct(&mut self, value: T) -> Self::Id;
 }

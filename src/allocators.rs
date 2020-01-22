@@ -16,17 +16,6 @@ impl<T> Default for FixedAllocator<T> {
     }
 }
 
-//impl<T> Allocator<'_, T> for FixedAllocator<T> {
-//    type Id = Id<T>;
-//
-//    fn create(&mut self) -> Self::Id {
-//        let index = self.ids.len();
-//        let id = Self::Id::new(index as u32);
-//        self.ids.push(id);
-//        id
-//    }
-//}
-
 impl<T> Allocator<T> for FixedAllocator<T> {
     type Id = Id<T>;
 
@@ -37,79 +26,6 @@ impl<T> Allocator<T> for FixedAllocator<T> {
         &self.ids[index]
     }
 }
-
-//#[derive(Debug, Clone)]
-//pub struct GenAllocator<T> {
-//    ids: Vec<GenId<T>>,
-//    dead: Vec<u32>,
-//    living: BitSet,
-//}
-//
-//impl<T> Default for GenAllocator<T> {
-//    fn default() -> Self {
-//        Self {
-//            ids: vec![],
-//            dead: vec![],
-//            living: BitSet::new(),
-//        }
-//    }
-//}
-//
-//impl<T> GenAllocator<T> {
-//    pub fn verify(&self, id: GenId<T>) -> Option<Valid<T>> {
-//        if self.is_alive(id) {
-//            Some(Valid::new(id))
-//        } else {
-//            None
-//        }
-//    }
-//
-//    pub fn is_alive(&self, id: GenId<T>) -> bool {
-//        let index = id.id.index();
-//        if let Some(current) = self.ids.get(index) {
-//            *current == id
-//        } else {
-//            false
-//        }
-//    }
-//
-//    pub fn kill(&mut self, id: GenId<T>) {
-//        if self.is_alive(id) {
-//            let id = &mut self.ids[id.id.index()];
-//            id.gen = id.gen.next();
-//
-//            self.dead.push(id.id.index);
-//            self.living.remove(id.id.index());
-//        }
-//    }
-//}
-//
-//impl<'a, T: 'a> Allocator<'a, T> for GenAllocator<T> {
-//    type Id = Valid<'a, T>;
-//
-//    fn create(&mut self) -> Self::Id {
-//        if let Some(index) = self.dead.pop() {
-//            let i = index as usize;
-//
-//            let gen = self.ids.get(i).unwrap().gen;
-//
-//            let id = GenId::new(index, gen);
-//            self.ids[i] = id;
-//            self.living.insert(i);
-//
-//            Valid::new(id)
-//        } else {
-//            let i = self.ids.len();
-//            let gen = Generation::default();
-//            let id = GenId::new(i as u32, gen);
-//
-//            self.ids.push(id);
-//            self.living.insert(i);
-//
-//            Valid::new(id)
-//        }
-//    }
-//}
 
 #[derive(Debug)]
 pub struct GenAllocator<T> {

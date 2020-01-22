@@ -130,11 +130,11 @@ impl<T> Ord for GenId<T> {
 
 #[derive(Debug)]
 pub struct Valid<T> {
-    pub id: GenId<T>,
+    pub (crate) id: GenId<T>,
 }
 
 impl<T> Valid<T> {
-    pub fn new(id: GenId<T>) -> Self {
+    pub (crate) fn new(id: GenId<T>) -> Self {
         Self {
             id,
         }
