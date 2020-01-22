@@ -24,7 +24,7 @@ impl<ID, T> Component<ID, T> {
         match id.index() {
             index if index < self.values.len() => self.values[index] = value,
             index if index == self.values.len() => self.values.push(value),
-            _ => { panic!("Given index is invalid: {}", id) }
+            _ => { panic!("Given index is invalid: {}", id.id()) }
         }
     }
 

@@ -2,6 +2,7 @@ use relational_ecs::storage::Component;
 use relational_ecs::traits::Split;
 use relational_ecs::allocators::*;
 use relational_ecs::traits_new::*;
+use relational_ecs::ids::Id;
 
 fn main() {
 //    let mut state = Game::default();
@@ -41,7 +42,19 @@ pub struct System {
 }
 
 impl Arena<'_> for System {
+    type Row = SystemRow;
     type Allocator = FixedAllocator<Self>;
+}
+pub struct SystemRow {
+    pub name: String,
+    pub position: Position,
+}
+
+impl Insert<'_> for System {
+    fn insert(&mut self, id: &impl IdIndex<Self>, value: SystemRow) {
+        self.name.insert(id, value.name);
+        self.position.insert(id, value.position);
+    }
 }
 
 #[derive(Debug, Default, Clone)]
@@ -52,7 +65,14 @@ pub struct Body {
 }
 
 impl Arena<'_> for Body {
+    type Row = BodyRow;
     type Allocator = FixedAllocator<Self>;
+}
+
+pub struct BodyRow {
+    pub name: String,
+    pub position: Position,
+    pub mass: Mass,
 }
 
 #[derive(Debug, Default, Copy, Clone)]
@@ -61,27 +81,7 @@ pub struct Position(f64, f64);
 #[derive(Debug, Default, Copy, Clone)]
 pub struct Mass(f64);
 
-pub struct SystemRow {
-    pub name: String,
-    pub position: Position,
-}
-
-impl Insert<SystemRow> for System {
-    fn insert(&mut self, id: &impl IdIndex<Self>, value: SystemRow) {
-        self.name.insert(id, value.name);
-        self.position.insert(id, value.position);
-    }
-}
-
-impl Create<'_, System, SystemRow> for System {}
-
-pub struct BodyRow {
-    pub name: String,
-    pub position: Position,
-    pub mass: Mass,
-}
-
-impl Insert<BodyRow> for Body {
+impl Insert<'_> for Body {
     fn insert(&mut self, id: &impl IdIndex<Self>, value: BodyRow) {
         self.name.insert(id, value.name);
         self.position.insert(id, value.position);
@@ -89,4 +89,31 @@ impl Insert<BodyRow> for Body {
     }
 }
 
-impl Create<'_, Body, BodyRow> for Body {}
+#[derive(Debug, Default, Clone)]
+pub struct Colony {
+    pub name: Component<Self, String>,
+    pub body: Component<Self, Id<Body>>,
+    pub population: Component<Self, Population>,
+}
+
+pub struct ColonyRow {
+    pub name: String,
+    pub body: Id<Body>,
+    pub population: Population,
+}
+
+#[derive(Debug, Default, Copy, Clone)]
+pub struct Population(f64);
+
+impl Arena<'_> for Colony {
+    type Row = ColonyRow;
+    type Allocator = FlexAllocator<Self>;
+}
+
+impl Insert<'_> for Colony {
+    fn insert(&mut self, id: &impl IdIndex<Self>, value: Self::Row) {
+        self.name.insert(id, value.name);
+        self.body.insert(id, value.body);
+        self.population.insert(id, value.population);
+    }
+}

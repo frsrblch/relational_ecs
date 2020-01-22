@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
-pub trait IdIndex<T>: Display {
-    type Id;
+pub trait IdIndex<T> {
+    type Id: Display;
     fn index(&self) -> usize;
     fn id(&self) -> Self::Id;
 }
@@ -12,28 +12,33 @@ pub trait Allocator<'a, T> {
 }
 
 pub trait Arena<'a>: Sized {
+    type Row;
     type Allocator: Allocator<'a, Self>;
 }
 
-pub trait Insert<T>: Sized {
-    fn insert(&mut self, id: &impl IdIndex<Self>, value: T);
+pub trait Insert<'a>: Arena<'a> {
+    fn insert(&mut self, id: &impl IdIndex<Self>, value: Self::Row);
 }
 
-pub trait Create<'a, ID, T>: Insert<T> + Arena<'a>
-    where <<Self as Arena<'a>>::Allocator as Allocator<'a, Self>>::Id: IdIndex<Self>
-{
-    fn create(&mut self, value: T, allocator: &'a mut Self::Allocator) -> <Self::Allocator as Allocator<'a, Self>>::Id {
+pub trait Create<'a>: Insert<'a> {
+    fn create(
+        &mut self,
+        value: Self::Row,
+        allocator: &'a mut Self::Allocator
+    ) -> <Self::Allocator as Allocator<'a, Self>>::Id {
         let id = allocator.create();
         self.insert(&id, value);
         id
     }
 }
 
-pub trait Construct<ID, T> {
-    type Id: IdIndex<ID>;
-    fn construct(&mut self, value: T) -> Self::Id;
-}
+impl<'a, T: Insert<'a>> Create<'a> for T {}
 
-pub trait Link<IdA, IdB> {
-    fn link(&mut self, id_a: &IdA, id_b: &IdB);
-}
+//pub trait Construct<ID, T> {
+//    type Id: IdIndex<ID>;
+//    fn construct(&mut self, value: T) -> <Self::Id as IdIndex<ID>>::Id;
+//}
+//
+//pub trait Link<IdA, IdB> {
+//    fn link(&mut self, id_a: &IdA, id_b: &IdB);
+//}

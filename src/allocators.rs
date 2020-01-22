@@ -45,9 +45,9 @@ impl<T> Default for FlexAllocator<T> {
 }
 
 impl<T> FlexAllocator<T> {
-    pub fn verify(&self, id: GenId<T>) -> Option<ValidGenId<T>> {
+    pub fn verify(&self, id: GenId<T>) -> Option<Valid<T>> {
         if self.is_alive(id) {
-            Some(ValidGenId::new(id))
+            Some(Valid::new(id))
         } else {
             None
         }
@@ -74,7 +74,7 @@ impl<T> FlexAllocator<T> {
 }
 
 impl<'a, T: 'a> Allocator<'a, T> for FlexAllocator<T> {
-    type Id = ValidGenId<'a, T>;
+    type Id = Valid<'a, T>;
 
     fn create(&mut self) -> Self::Id {
         if let Some(index) = self.dead.pop() {
@@ -86,7 +86,7 @@ impl<'a, T: 'a> Allocator<'a, T> for FlexAllocator<T> {
             self.ids[i] = id;
             self.living.insert(i);
 
-            ValidGenId::new(id)
+            Valid::new(id)
         } else {
             let i = self.ids.len();
             let gen = Generation::default();
@@ -95,7 +95,7 @@ impl<'a, T: 'a> Allocator<'a, T> for FlexAllocator<T> {
             self.ids.push(id);
             self.living.insert(i);
 
-            ValidGenId::new(id)
+            Valid::new(id)
         }
     }
 }

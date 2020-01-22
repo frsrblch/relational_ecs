@@ -128,12 +128,12 @@ impl<T> Ord for GenId<T> {
 }
 
 #[derive(Debug)]
-pub struct ValidGenId<'a, T> {
+pub struct Valid<'a, T> {
     pub id: GenId<T>,
     pub (crate) marker: PhantomData<&'a FlexAllocator<T>>,
 }
 
-impl<'a, T> ValidGenId<'a, T> {
+impl<'a, T> Valid<'a, T> {
     pub fn new(id: GenId<T>) -> Self {
         Self {
             id,
@@ -142,13 +142,7 @@ impl<'a, T> ValidGenId<'a, T> {
     }
 }
 
-impl<'a, T> Display for ValidGenId<'a, T> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        self.id.fmt(f)
-    }
-}
-
-impl<'a, T> IdIndex<T> for ValidGenId<'a, T> {
+impl<'a, T> IdIndex<T> for Valid<'a, T> {
     type Id = GenId<T>;
     fn index(&self) -> usize {
         self.id.id.index()
