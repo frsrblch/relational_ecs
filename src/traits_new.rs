@@ -18,9 +18,7 @@ pub trait Arena<'a>: Sized {
     type Allocator: Allocator<'a, Self>;
 
     fn insert(&mut self, id: &<<Self as Arena<'a>>::Allocator as Allocator<'a, Self>>::Id, value: Self::Row);
-}
 
-pub trait Create<'a>: Arena<'a> {
     fn create(
         &mut self,
         value: Self::Row,
@@ -32,18 +30,23 @@ pub trait Create<'a>: Arena<'a> {
     }
 }
 
-impl<'a, T: Arena<'a>> Create<'a> for T {}
-
 pub trait Construct<ID, T> {
     type Id: IdIndex<Arena=ID> + Sized;
     fn construct(&mut self, value: T) -> Self::Id;
 }
 
-pub trait Link<A, B>
+pub trait Link<'a, A, B>
     where
-        A: IdIndex,
-        B: IdIndex,
+        A: Arena<'a>,
+        B: Arena<'a>,
 {
-    fn link(&mut self, a: &A, b: &B);
+    fn link(&mut self, a: &A::Id, b: &B::Id);
 }
 
+pub trait CreateAndLink<'a, A, B, T>: Link<'a, A, B>
+    where
+        A: Arena<'a>,
+        B: Arena<'a> +
+{
+
+}

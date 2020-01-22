@@ -212,19 +212,19 @@ pub struct Planet {
     pub atmosphere: Option<AtmosphereRow>,
 }
 
-impl Link<Id<System>, Id<Body>> for State {
+impl Link<'_, System, Body> for State {
     fn link(&mut self, a: &Id<System>, b: &Id<Body>) {
         self.body.system.insert(b, *a);
     }
 }
 
-impl Link<Id<Body>, Id<Surface>> for State {
+impl Link<'_, Body, Surface> for State {
     fn link(&mut self, a: &Id<Body>, b: &Id<Surface>) {
         self.surface.body.insert(b, *a);
     }
 }
 
-impl Link<Id<Body>, Id<Atmosphere>> for State {
+impl Link<'_, Body, Atmosphere> for State {
     fn link(&mut self, a: &Id<Body>, b: &Id<Atmosphere>) {
         self.atmosphere.body.insert(b, *a);
     }
@@ -239,16 +239,16 @@ impl Construct<Body, Planet> for Game {
         // TODO add CreateAndLink trait
         let body: Id<Body> = state.body.create(value.body, &mut ids.bodies);
 
-        state.link(&value.system, &body);
+        Link::<System, Body>::link(state, &value.system, &body);
 
         if let Some(surface) = value.surface {
             let surface = state.surface.create(surface, &mut ids.surfaces);
-            state.link(&body, &surface);
+            Link::<Body, Surface>::link(state, &body, &surface);
         }
 
         if let Some(atmosphere) = value.atmosphere {
             let atmosphere = state.atmosphere.create(atmosphere, &mut ids.atmospheres);
-            state.link(&body, &atmosphere);
+            Link::<Body, Atmosphere>::link(state, &body, &atmosphere);
         }
 
         body
