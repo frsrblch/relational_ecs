@@ -12,7 +12,7 @@ fn main() {
         name: "Sol".to_string(),
         position: Default::default()
     };
-    let system: Id<System> = state.system.create(system, &mut ids.systems);
+    let system = *state.system.create(system, &mut ids.systems);
 
     let planet = Planet {
         system,
@@ -33,8 +33,9 @@ fn main() {
         name: "Humanity".to_string(),
         population: Population(7.8e9),
     };
-    let _colony: GenId<Colony> = state.colony.create(colony, &mut ids.colonies).id();
+    let colony = state.colony.create(colony, &mut ids.colonies).id();
 
+    dbg!(system, body, colony);
 }
 
 #[derive(Debug, Default, Clone)]
@@ -80,7 +81,7 @@ pub struct System {
     pub position: Component<Self, Position>,
 }
 
-impl Arena<'_> for System {
+impl Arena for System {
     type Id = Id<Self>;
     type Row = SystemRow;
     type Allocator = FixedAllocator<Self>;
@@ -107,7 +108,7 @@ pub struct Body {
     pub atmosphere: Component<Self, Option<Id<Atmosphere>>>,
 }
 
-impl Arena<'_> for Body {
+impl Arena for Body {
     type Id = Id<Self>;
     type Row = BodyRow;
     type Allocator = FixedAllocator<Self>;
@@ -150,7 +151,7 @@ pub struct ColonyRow {
 #[derive(Debug, Default, Copy, Clone)]
 pub struct Population(f64);
 
-impl Arena<'_> for Colony {
+impl Arena for Colony {
     type Id = Id<Self>;
     type Row = ColonyRow;
     type Allocator = GenAllocator<Self>;
@@ -174,7 +175,7 @@ pub struct SurfaceRow {
     pub temperature: f64,
 }
 
-impl Arena<'_> for Surface {
+impl Arena for Surface {
     type Id = Id<Self>;
     type Row = SurfaceRow;
     type Allocator = FixedAllocator<Self>;
@@ -197,7 +198,7 @@ pub struct AtmosphereRow {
     pub greenhouse_effect: f64,
 }
 
-impl Arena<'_> for Atmosphere {
+impl Arena for Atmosphere {
     type Id = Id<Self>;
     type Row = AtmosphereRow;
     type Allocator = FixedAllocator<Self>;
@@ -215,20 +216,20 @@ pub struct Planet {
     pub atmosphere: Option<AtmosphereRow>,
 }
 
-impl Link<'_, System, Body> for State {
+impl Link<System, Body> for State {
     fn link(&mut self, a: &Id<System>, b: &Id<Body>) {
         self.body.system.insert(b, *a);
     }
 }
 
-impl Link<'_, Body, Surface> for State {
+impl Link<Body, Surface> for State {
     fn link(&mut self, a: &Id<Body>, b: &Id<Surface>) {
         self.body.surface.insert(a, Some(*b));
         self.surface.body.insert(b, *a);
     }
 }
 
-impl Link<'_, Body, Atmosphere> for State {
+impl Link<Body, Atmosphere> for State {
     fn link(&mut self, a: &Id<Body>, b: &Id<Atmosphere>) {
         self.body.atmosphere.insert(a, Some(*b));
         self.atmosphere.body.insert(b, *a);
@@ -241,16 +242,16 @@ impl Construct<Body, Planet> for Game {
     fn construct(&mut self, value: Planet) -> Self::Id {
         let (state, ids) = self.split();
 
-        let body: Id<Body> = state.body.create(value.body, &mut ids.bodies);
+        let body: Id<Body> = *state.body.create(value.body, &mut ids.bodies);
         Link::<System, Body>::link(state, &value.system, &body);
 
         if let Some(surface) = value.surface {
-            let surface = state.surface.create(surface, &mut ids.surfaces);
+            let surface = *state.surface.create(surface, &mut ids.surfaces);
             Link::<Body, Surface>::link(state, &body, &surface);
         }
 
         if let Some(atmosphere) = value.atmosphere {
-            let atmosphere = state.atmosphere.create(atmosphere, &mut ids.atmospheres);
+            let atmosphere = *state.atmosphere.create(atmosphere, &mut ids.atmospheres);
             Link::<Body, Atmosphere>::link(state, &body, &atmosphere);
         }
 
