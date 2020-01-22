@@ -5,8 +5,8 @@ use relational_ecs::traits_new::*;
 use relational_ecs::ids::*;
 
 fn main() {
-    let mut state = Game::default();
-    let (state, ids) = state.split();
+    let mut game = Game::default();
+    let (state, ids) = game.split();
 
     let system = SystemRow {
         name: "Sol".to_string(),
@@ -15,16 +15,20 @@ fn main() {
     let system: Id<System> = state.system.create(system, &mut ids.systems);
 
     // TODO for compound types, the Construct trait is used to instantiate several ids at once
-    let body = BodyRow {
-        name: "Earth".to_string(),
-        position: Position(0.0, 149.6e9),
-        mass: Mass(5.972e24),
+    let planet = Planet {
+        system,
+        body: BodyRow {
+            name: "Earth".to_string(),
+            position: Position(0.0, 149.6e9),
+            mass: Mass(5.972e24),
+        },
+        surface: None,
+        atmosphere: None
     };
-    let body: Id<Body> = state.body.create(body, &mut ids.bodies);
-    Link::<System, Body>::link(state, &system, &body);
-
+    let body = game.construct(planet);
 
     // for simple links, the row can contain the parent id
+    let (state, ids) = game.split();
     let colony = ColonyRow {
         body,
         name: "Humanity".to_string(),
@@ -77,21 +81,20 @@ pub struct System {
     pub position: Component<Self, Position>,
 }
 
-impl Arena<'_> for System {
+impl<'a> Arena<'a> for System {
+    type Id = Id<Self>;
     type Row = SystemRow;
     type Allocator = FixedAllocator<Self>;
+
+    fn insert(&mut self, id: &Id<Self>, value: SystemRow) {
+        self.name.insert(id, value.name);
+        self.position.insert(id, value.position);
+    }
 }
 
 pub struct SystemRow {
     pub name: String,
     pub position: Position,
-}
-
-impl Insert<'_> for System {
-    fn insert(&mut self, id: &Id<Self>, value: SystemRow) {
-        self.name.insert(id, value.name);
-        self.position.insert(id, value.position);
-    }
 }
 
 #[derive(Debug, Default, Clone)]
@@ -104,9 +107,16 @@ pub struct Body {
     // TODO add optional links to surface and atmosphere
 }
 
-impl Arena<'_> for Body {
+impl<'a> Arena<'a> for Body {
+    type Id = Id<Self>;
     type Row = BodyRow;
     type Allocator = FixedAllocator<Self>;
+
+    fn insert(&mut self, id: &Id<Self>, value: BodyRow) {
+        self.name.insert(id, value.name);
+        self.position.insert(id, value.position);
+        self.mass.insert(id, value.mass);
+    }
 }
 
 pub struct BodyRow {
@@ -120,14 +130,6 @@ pub struct Position(f64, f64);
 
 #[derive(Debug, Default, Copy, Clone)]
 pub struct Mass(f64);
-
-impl Insert<'_> for Body {
-    fn insert(&mut self, id: &Id<Self>, value: BodyRow) {
-        self.name.insert(id, value.name);
-        self.position.insert(id, value.position);
-        self.mass.insert(id, value.mass);
-    }
-}
 
 #[derive(Debug, Default, Clone)]
 pub struct Colony {
@@ -145,12 +147,11 @@ pub struct ColonyRow {
 #[derive(Debug, Default, Copy, Clone)]
 pub struct Population(f64);
 
-impl Arena<'_> for Colony {
+impl<'a> Arena<'a> for Colony {
+    type Id = Id<Self>;
     type Row = ColonyRow;
     type Allocator = GenAllocator<Self>;
-}
 
-impl Insert<'_> for Colony {
     fn insert(&mut self, id: &Valid<Self>, value: Self::Row) {
         self.name.insert(id, value.name);
         self.body.insert(id, value.body);
@@ -170,12 +171,11 @@ pub struct SurfaceRow {
     pub temperature: f64,
 }
 
-impl Arena<'_> for Surface {
+impl<'a> Arena<'a> for Surface {
+    type Id = Id<Self>;
     type Row = SurfaceRow;
     type Allocator = FixedAllocator<Self>;
-}
 
-impl Insert<'_> for Surface {
     fn insert(&mut self, id: &Id<Self>, value: Self::Row) {
         self.area.insert(id, value.area);
         self.temperature.insert(id, value.temperature);
@@ -194,12 +194,11 @@ pub struct AtmosphereRow {
     pub greenhouse_effect: f64,
 }
 
-impl Arena<'_> for Atmosphere {
+impl<'a> Arena<'a> for Atmosphere {
+    type Id = Id<Self>;
     type Row = AtmosphereRow;
     type Allocator = FixedAllocator<Self>;
-}
 
-impl Insert<'_> for Atmosphere {
     fn insert(&mut self, id: &Id<Self>, value: Self::Row) {
         self.breathable.insert(id, value.breathable);
         self.greenhouse_effect.insert(id, value.greenhouse_effect);
@@ -213,19 +212,19 @@ pub struct Planet {
     pub atmosphere: Option<AtmosphereRow>,
 }
 
-impl Link<'_, System, Body> for State {
+impl Link<Id<System>, Id<Body>> for State {
     fn link(&mut self, a: &Id<System>, b: &Id<Body>) {
         self.body.system.insert(b, *a);
     }
 }
 
-impl Link<'_, Body, Surface> for State {
+impl Link<Id<Body>, Id<Surface>> for State {
     fn link(&mut self, a: &Id<Body>, b: &Id<Surface>) {
         self.surface.body.insert(b, *a);
     }
 }
 
-impl Link<'_, Body, Atmosphere> for State {
+impl Link<Id<Body>, Id<Atmosphere>> for State {
     fn link(&mut self, a: &Id<Body>, b: &Id<Atmosphere>) {
         self.atmosphere.body.insert(b, *a);
     }
@@ -240,16 +239,16 @@ impl Construct<Body, Planet> for Game {
         // TODO add CreateAndLink trait
         let body: Id<Body> = state.body.create(value.body, &mut ids.bodies);
 
-        Link::<System, Body>::link(state, &value.system, &body);
+        state.link(&value.system, &body);
 
         if let Some(surface) = value.surface {
             let surface = state.surface.create(surface, &mut ids.surfaces);
-            Link::<Body, Surface>::link(state, &body, &surface);
+            state.link(&body, &surface);
         }
 
         if let Some(atmosphere) = value.atmosphere {
             let atmosphere = state.atmosphere.create(atmosphere, &mut ids.atmospheres);
-            Link::<Body, Atmosphere>::link(state, &body, &atmosphere);
+            state.link(&body, &atmosphere);
         }
 
         body

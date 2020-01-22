@@ -61,7 +61,8 @@ impl<T> Id<T> {
     }
 }
 
-impl<T> IdIndex<T> for Id<T> {
+impl<T> IdIndex for Id<T> {
+    type Arena = T;
     type Id = Self;
     fn index(&self) -> usize {
         self.index as usize
@@ -142,7 +143,8 @@ impl<'a, T> Valid<'a, T> {
     }
 }
 
-impl<'a, T> IdIndex<T> for Valid<'a, T> {
+impl<'a, T> IdIndex for Valid<'a, T> {
+    type Arena = T;
     type Id = GenId<T>;
     fn index(&self) -> usize {
         self.id.id.index()
