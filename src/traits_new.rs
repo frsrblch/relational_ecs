@@ -43,10 +43,18 @@ pub trait Link<'a, A, B>
     fn link(&mut self, a: &A::Id, b: &B::Id);
 }
 
-pub trait CreateAndLink<'a, A, B, T>: Link<'a, A, B>
-    where
-        A: Arena<'a>,
-        B: Arena<'a> +
-{
-
-}
+//pub trait CreateAndLink<'a, A, T>: Link<'a, A, Self> + Arena<'a>
+//    where
+//        A: Arena<'a>,
+//{
+//    fn create_and_link(
+//        &mut self,
+//        parent: &A::Id,
+//        row: Self::Row,
+//        allocator: &'a mut Self::Allocator
+//    ) -> <<Self as Arena<'a>>::Allocator as Allocator<'a, Self>>::Id {
+//        let id = self.create(row, allocator);
+//        self.link(parent, &id);
+//        id
+//    }
+//}

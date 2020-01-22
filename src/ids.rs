@@ -64,6 +64,7 @@ impl<T> Id<T> {
 impl<T> IdIndex for Id<T> {
     type Arena = T;
     type Id = Self;
+
     fn index(&self) -> usize {
         self.index as usize
     }
@@ -96,7 +97,7 @@ impl<T> Copy for GenId<T> {}
 impl<T> GenId<T> {
     pub (crate) fn new(index: u32, gen: Generation) -> Self {
         Self {
-            id: Id::<T>::new(index),
+            id: Id::new(index),
             gen,
         }
     }
@@ -130,8 +131,8 @@ impl<T> Ord for GenId<T> {
 
 #[derive(Debug)]
 pub struct Valid<'a, T> {
-    pub id: GenId<T>,
-    pub (crate) marker: PhantomData<&'a GenAllocator<T>>,
+    id: GenId<T>,
+    marker: PhantomData<&'a GenAllocator<T>>,
 }
 
 impl<'a, T> Valid<'a, T> {
@@ -146,6 +147,7 @@ impl<'a, T> Valid<'a, T> {
 impl<'a, T> IdIndex for Valid<'a, T> {
     type Arena = T;
     type Id = GenId<T>;
+
     fn index(&self) -> usize {
         self.id.id.index()
     }

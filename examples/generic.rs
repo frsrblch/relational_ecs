@@ -14,7 +14,6 @@ fn main() {
     };
     let system: Id<System> = state.system.create(system, &mut ids.systems);
 
-    // TODO for compound types, the Construct trait is used to instantiate several ids at once
     let planet = Planet {
         system,
         body: BodyRow {
@@ -81,7 +80,7 @@ pub struct System {
     pub position: Component<Self, Position>,
 }
 
-impl<'a> Arena<'a> for System {
+impl Arena<'_> for System {
     type Id = Id<Self>;
     type Row = SystemRow;
     type Allocator = FixedAllocator<Self>;
@@ -104,10 +103,11 @@ pub struct Body {
     pub position: Component<Self, Position>,
     pub mass: Component<Self, Mass>,
 
-    // TODO add optional links to surface and atmosphere
+    pub surface: Component<Self, Option<Id<Surface>>>,
+    pub atmosphere: Component<Self, Option<Id<Atmosphere>>>,
 }
 
-impl<'a> Arena<'a> for Body {
+impl Arena<'_> for Body {
     type Id = Id<Self>;
     type Row = BodyRow;
     type Allocator = FixedAllocator<Self>;
@@ -116,6 +116,9 @@ impl<'a> Arena<'a> for Body {
         self.name.insert(id, value.name);
         self.position.insert(id, value.position);
         self.mass.insert(id, value.mass);
+
+        self.surface.insert(id, None);
+        self.atmosphere.insert(id, None);
     }
 }
 
@@ -147,14 +150,14 @@ pub struct ColonyRow {
 #[derive(Debug, Default, Copy, Clone)]
 pub struct Population(f64);
 
-impl<'a> Arena<'a> for Colony {
+impl Arena<'_> for Colony {
     type Id = Id<Self>;
     type Row = ColonyRow;
     type Allocator = GenAllocator<Self>;
 
     fn insert(&mut self, id: &Valid<Self>, value: Self::Row) {
-        self.name.insert(id, value.name);
         self.body.insert(id, value.body);
+        self.name.insert(id, value.name);
         self.population.insert(id, value.population);
     }
 }
@@ -171,7 +174,7 @@ pub struct SurfaceRow {
     pub temperature: f64,
 }
 
-impl<'a> Arena<'a> for Surface {
+impl Arena<'_> for Surface {
     type Id = Id<Self>;
     type Row = SurfaceRow;
     type Allocator = FixedAllocator<Self>;
@@ -194,7 +197,7 @@ pub struct AtmosphereRow {
     pub greenhouse_effect: f64,
 }
 
-impl<'a> Arena<'a> for Atmosphere {
+impl Arena<'_> for Atmosphere {
     type Id = Id<Self>;
     type Row = AtmosphereRow;
     type Allocator = FixedAllocator<Self>;
@@ -220,12 +223,14 @@ impl Link<'_, System, Body> for State {
 
 impl Link<'_, Body, Surface> for State {
     fn link(&mut self, a: &Id<Body>, b: &Id<Surface>) {
+        self.body.surface.insert(a, Some(*b));
         self.surface.body.insert(b, *a);
     }
 }
 
 impl Link<'_, Body, Atmosphere> for State {
     fn link(&mut self, a: &Id<Body>, b: &Id<Atmosphere>) {
+        self.body.atmosphere.insert(a, Some(*b));
         self.atmosphere.body.insert(b, *a);
     }
 }
@@ -236,9 +241,7 @@ impl Construct<Body, Planet> for Game {
     fn construct(&mut self, value: Planet) -> Self::Id {
         let (state, ids) = self.split();
 
-        // TODO add CreateAndLink trait
         let body: Id<Body> = state.body.create(value.body, &mut ids.bodies);
-
         Link::<System, Body>::link(state, &value.system, &body);
 
         if let Some(surface) = value.surface {
