@@ -3,12 +3,14 @@ use std::fmt::Display;
 pub trait IdIndex {
     type Arena;
     type Id: Display + Sized;
+
     fn index(&self) -> usize;
     fn id(&self) -> Self::Id;
 }
 
 pub trait Allocator<'a, T> {
     type Id: IdIndex<Arena=T>;
+
     fn create(&'a mut self) -> Self::Id;
 }
 
@@ -32,6 +34,7 @@ pub trait Arena<'a>: Sized {
 
 pub trait Construct<ID, T> {
     type Id: IdIndex<Arena=ID> + Sized;
+
     fn construct(&mut self, value: T) -> Self::Id;
 }
 
@@ -42,19 +45,3 @@ pub trait Link<'a, A, B>
 {
     fn link(&mut self, a: &A::Id, b: &B::Id);
 }
-
-//pub trait CreateAndLink<'a, A, T>: Link<'a, A, Self> + Arena<'a>
-//    where
-//        A: Arena<'a>,
-//{
-//    fn create_and_link(
-//        &mut self,
-//        parent: &A::Id,
-//        row: Self::Row,
-//        allocator: &'a mut Self::Allocator
-//    ) -> <<Self as Arena<'a>>::Allocator as Allocator<'a, Self>>::Id {
-//        let id = self.create(row, allocator);
-//        self.link(parent, &id);
-//        id
-//    }
-//}
