@@ -1,7 +1,7 @@
 use crate::entities::Generation;
 use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
-use crate::allocators::FlexAllocator;
+use crate::allocators::GenAllocator;
 use std::cmp::Ordering;
 use std::fmt::{Formatter, Error, Display};
 use crate::traits_new::IdIndex;
@@ -130,7 +130,7 @@ impl<T> Ord for GenId<T> {
 #[derive(Debug)]
 pub struct Valid<'a, T> {
     pub id: GenId<T>,
-    pub (crate) marker: PhantomData<&'a FlexAllocator<T>>,
+    pub (crate) marker: PhantomData<&'a GenAllocator<T>>,
 }
 
 impl<'a, T> Valid<'a, T> {

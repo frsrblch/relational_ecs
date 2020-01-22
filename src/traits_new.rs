@@ -34,11 +34,16 @@ pub trait Create<'a>: Insert<'a> {
 
 impl<'a, T: Insert<'a>> Create<'a> for T {}
 
-//pub trait Construct<ID, T> {
-//    type Id: IdIndex<ID>;
-//    fn construct(&mut self, value: T) -> <Self::Id as IdIndex<ID>>::Id;
-//}
-//
-//pub trait Link<IdA, IdB> {
-//    fn link(&mut self, id_a: &IdA, id_b: &IdB);
-//}
+pub trait Construct<ID, T> {
+    type Id: IdIndex<ID>;
+    fn construct(&mut self, value: T) -> <Self::Id as IdIndex<ID>>::Id;
+}
+
+pub trait Link<'a, A, B>
+    where
+        A: Arena<'a>,
+        B: Arena<'a>,
+{
+    fn link(&mut self, a: &<A::Allocator as Allocator<'a, A>>::Id, b: &<B::Allocator as Allocator<'a, B>>::Id);
+}
+

@@ -28,13 +28,13 @@ impl<T> Allocator<'_, T> for FixedAllocator<T> {
 }
 
 #[derive(Debug, Clone)]
-pub struct FlexAllocator<T> {
+pub struct GenAllocator<T> {
     ids: Vec<GenId<T>>,
     dead: Vec<u32>,
     living: BitSet,
 }
 
-impl<T> Default for FlexAllocator<T> {
+impl<T> Default for GenAllocator<T> {
     fn default() -> Self {
         Self {
             ids: vec![],
@@ -44,7 +44,7 @@ impl<T> Default for FlexAllocator<T> {
     }
 }
 
-impl<T> FlexAllocator<T> {
+impl<T> GenAllocator<T> {
     pub fn verify(&self, id: GenId<T>) -> Option<Valid<T>> {
         if self.is_alive(id) {
             Some(Valid::new(id))
@@ -73,7 +73,7 @@ impl<T> FlexAllocator<T> {
     }
 }
 
-impl<'a, T: 'a> Allocator<'a, T> for FlexAllocator<T> {
+impl<'a, T: 'a> Allocator<'a, T> for GenAllocator<T> {
     type Id = Valid<'a, T>;
 
     fn create(&mut self) -> Self::Id {
@@ -110,7 +110,7 @@ mod test {
 
     #[test]
     fn flex_allocator() {
-        let mut allocator = &mut FlexAllocator::<Test>::default();
+        let mut allocator = &mut GenAllocator::<Test>::default();
 
         let id_0_gen_1 = allocator.create().id;
         let id_1_gen_1 = allocator.create().id;
@@ -121,7 +121,7 @@ mod test {
 
     #[test]
     fn verify_when_id_is_alive_returns_some() {
-        let mut allocator = &mut FlexAllocator::<Test>::default();
+        let mut allocator = &mut GenAllocator::<Test>::default();
 
         let id_0_gen_1 = allocator.create().id;
 
@@ -130,7 +130,7 @@ mod test {
 
     #[test]
     fn verify_when_id_is_not_alive_returns_none() {
-        let mut allocator = &mut FlexAllocator::<Test>::default();
+        let mut allocator = &mut GenAllocator::<Test>::default();
 
         let _id_0_gen_1 = allocator.create().id;
 
@@ -140,7 +140,7 @@ mod test {
 
     #[test]
     fn is_alive_when_id_is_alive_returns_true() {
-        let mut allocator = &mut FlexAllocator::<Test>::default();
+        let mut allocator = &mut GenAllocator::<Test>::default();
 
         let id_0_gen_1 = allocator.create().id;
 
@@ -149,7 +149,7 @@ mod test {
 
     #[test]
     fn is_alive_when_id_is_not_alive_returns_false() {
-        let mut allocator = &mut FlexAllocator::<Test>::default();
+        let mut allocator = &mut GenAllocator::<Test>::default();
 
         let _id_0_gen_1 = allocator.create().id;
 
@@ -159,7 +159,7 @@ mod test {
 
     #[test]
     fn kill_given_live_entity_is_no_longer_alive() {
-        let mut allocator = &mut FlexAllocator::<Test>::default();
+        let mut allocator = &mut GenAllocator::<Test>::default();
 
         let id_0_gen_1 = allocator.create().id;
 
@@ -170,7 +170,7 @@ mod test {
 
     #[test]
     fn create_when_dead_index_returns_reused_index() {
-        let mut allocator = &mut FlexAllocator::<Test>::default();
+        let mut allocator = &mut GenAllocator::<Test>::default();
 
         let id_0_gen_1 = allocator.create().id;
 

@@ -40,7 +40,7 @@ impl<'a, ID: Arena<'a>, T> Component<ID, T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::allocators::{FixedAllocator, Allocator, FlexAllocator};
+    use crate::allocators::{FixedAllocator, Allocator, GenAllocator};
 
     #[derive(Debug)]
     struct Test;
@@ -70,7 +70,7 @@ mod tests {
 
     #[test]
     fn reuse_index() {
-        let mut allocator = &mut FlexAllocator::<Test>::default();
+        let mut allocator = &mut GenAllocator::<Test>::default();
         let mut component = Component::<Test, u32>::new();
 
         let id_0_1 = allocator.create();
