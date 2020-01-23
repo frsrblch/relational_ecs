@@ -10,5 +10,7 @@ mod entity_set;
 mod entity_map;
 
 pub use self::component::Component;
+pub use self::component_map::ComponentMap;
 
 mod component;
+mod component_map;
