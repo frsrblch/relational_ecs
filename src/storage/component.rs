@@ -3,12 +3,12 @@ use std::marker::PhantomData;
 use std::fmt::Debug;
 
 #[derive(Debug, Clone)]
-pub struct Component<ID, T> {
-    values: Vec<T>,
+pub struct Component<ID: Arena, T> {
+    pub values: Vec<T>,
     marker: PhantomData<ID>,
 }
 
-impl<ID, T> Default for Component<ID, T> {
+impl<ID: Arena, T> Default for Component<ID, T> {
     fn default() -> Self {
         Self {
             values: vec![],

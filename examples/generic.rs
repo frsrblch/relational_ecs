@@ -1,5 +1,4 @@
 use relational_ecs::storage::Component;
-use relational_ecs::traits::{Split};
 use relational_ecs::allocators::*;
 use relational_ecs::traits_new::*;
 use relational_ecs::ids::*;
@@ -18,7 +17,8 @@ fn main() {
         system,
         body: BodyRow {
             name: "Earth".to_string(),
-            position: Position(0.0, 149.6e9),
+            position: Position(149.6e9, 0.0),
+            velocity: Velocity(0.0, 29.78e3),
             mass: Mass(5.972e24),
         },
         surface: None,
@@ -102,6 +102,7 @@ pub struct Body {
     pub system: Component<Self, Id<System>>,
     pub name: Component<Self, String>,
     pub position: Component<Self, Position>,
+    pub velocity: Component<Self, Velocity>,
     pub mass: Component<Self, Mass>,
 
     pub surface: Component<Self, Option<Id<Surface>>>,
@@ -116,6 +117,7 @@ impl Arena for Body {
     fn insert(&mut self, id: &Id<Self>, value: BodyRow) {
         self.name.insert(id, value.name);
         self.position.insert(id, value.position);
+        self.velocity.insert(id, value.velocity);
         self.mass.insert(id, value.mass);
 
         self.surface.insert(id, None);
@@ -126,11 +128,15 @@ impl Arena for Body {
 pub struct BodyRow {
     pub name: String,
     pub position: Position,
+    pub velocity: Velocity,
     pub mass: Mass,
 }
 
 #[derive(Debug, Default, Copy, Clone)]
 pub struct Position(f64, f64);
+
+#[derive(Debug, Default, Copy, Clone)]
+pub struct Velocity(f64, f64);
 
 #[derive(Debug, Default, Copy, Clone)]
 pub struct Mass(f64);
@@ -256,5 +262,17 @@ impl Construct<Body, Planet> for Game {
         }
 
         body
+    }
+}
+
+impl Update<Body> for Position {
+    fn update(body: &mut Body) {
+        body.position
+            .iter_mut()
+            .zip(body.velocity.iter())
+            .for_each(|(p, v)| {
+                p.0 += v.0;
+                p.1 += v.1;
+            });
     }
 }
