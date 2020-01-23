@@ -32,14 +32,14 @@ impl<'a, ID: Arena, T> Component<ID, T> {
     pub fn get(&self, id: &<ID::Allocator as Allocator<ID>>::Id) -> &T {
         self.values
             .get(id.index())
-            .expect(&format!("No index found for {}, confirm that it Arena::insert is configured properly", std::any::type_name::<(ID, T)>()))
+            .expect(&format!("No index found for {}, confirm that Arena::insert() is configured properly", std::any::type_name::<(ID, T)>()))
 
     }
 
     pub fn get_mut(&mut self, id: &<ID::Allocator as Allocator<ID>>::Id) -> &mut T {
         self.values
             .get_mut(id.index())
-            .expect(&format!("No index found for {}, confirm that it Arena::insert is configured properly", std::any::type_name::<(ID, T)>()))
+            .expect(&format!("No index found for {}, confirm that Arena::insert() is configured properly", std::any::type_name::<(ID, T)>()))
     }
 }
 
