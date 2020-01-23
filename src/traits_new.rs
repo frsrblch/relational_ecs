@@ -45,6 +45,6 @@ pub trait Link<A, B>
 {
     fn link(
         &mut self,
-        a: &A::Id,
-        b: &B::Id);
+        a: &<A::Allocator as Allocator<A>>::Id,
+        b: &<B::Allocator as Allocator<B>>::Id);
 }
