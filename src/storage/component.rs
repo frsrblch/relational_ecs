@@ -1,6 +1,7 @@
 use crate::traits_new::*;
 use std::marker::PhantomData;
 use std::fmt::Debug;
+use std::ops::{Index, IndexMut};
 
 #[derive(Debug, Clone)]
 pub struct Component<ID: Arena, T> {
@@ -34,6 +35,20 @@ impl<'a, ID: Arena, T> Component<ID, T> {
 
     pub fn get_mut(&mut self, id: &<ID::Allocator as Allocator<ID>>::Id) -> &mut T {
         self.values.get_mut(id.index()).unwrap()
+    }
+}
+
+impl<ID: Arena, T> Index<&<ID::Allocator as Allocator<ID>>::Id> for Component<ID, T> {
+    type Output = T;
+
+    fn index(&self, index: &<ID::Allocator as Allocator<ID>>::Id) -> &Self::Output {
+        self.get(index)
+    }
+}
+
+impl<ID: Arena, T> IndexMut<&<ID::Allocator as Allocator<ID>>::Id> for Component<ID, T> {
+    fn index_mut(&mut self, index: &<ID::Allocator as Allocator<ID>>::Id) -> &mut Self::Output {
+        self.get_mut(index)
     }
 }
 
