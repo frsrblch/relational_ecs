@@ -29,12 +29,16 @@ impl<'a, ID: Arena, T> Component<ID, T> {
         }
     }
 
-    pub fn get(&self, id: &<ID::Allocator as Allocator<ID>>::Id) -> Option<&T> {
-        self.values.get(id.index())
+    pub fn get(&self, id: &<ID::Allocator as Allocator<ID>>::Id) -> &T {
+        self.values
+            .get(id.index())
+            .expect(stringify!("no value found for ID: {:?} T: {:?}", id, T))
     }
 
-    pub fn get_mut(&mut self, id: &<ID::Allocator as Allocator<ID>>::Id) -> Option<&mut T> {
-        self.values.get_mut(id.index())
+    pub fn get_mut(&mut self, id: &<ID::Allocator as Allocator<ID>>::Id) -> &mut T {
+        self.values
+            .get_mut(id.index())
+            .expect(stringify!("no value found for ID: {:?} T: {:?}", id, T))
     }
 }
 
