@@ -48,11 +48,3 @@ pub trait Link<A, B>
         a: &A::Id,
         b: &B::Id);
 }
-
-pub trait Update<T> {
-    fn update(state: &mut T);
-}
-
-pub trait  Split<E, S> {
-    fn split(&mut self) -> (&mut E, &mut S);
-}

@@ -105,6 +105,6 @@ pub trait Update<T> {
     fn update(state: &mut T);
 }
 
-pub trait  Split<E, S> {
-    fn split(&mut self) -> (&mut E, &mut S);
+pub trait Split<A, B> {
+    fn split(&mut self) -> (&mut A, &mut B);
 }

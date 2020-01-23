@@ -1,6 +1,7 @@
 use relational_ecs::storage::*;
 use relational_ecs::allocators::*;
 use relational_ecs::traits_new::*;
+use relational_ecs::traits::{Update, Split};
 use relational_ecs::ids::*;
 
 fn main() {
@@ -39,7 +40,7 @@ fn main() {
         name: "Humanity".to_string(),
         population: Population(7.8e9),
     };
-    let colony = state.colony.create(colony, &mut ids.colonies).id();
+    let _colony = state.colony.create(colony, &mut ids.colonies).id();
 
     dbg!(state);
 }
