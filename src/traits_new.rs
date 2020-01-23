@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::fmt::{Display, Debug};
 
 pub trait IdIndex {
     type Arena;
@@ -14,7 +14,7 @@ pub trait Allocator<T> {
     fn create(&mut self) -> &Self::Id;
 }
 
-pub trait Arena: Sized {
+pub trait Arena: Sized + Clone + Default + Debug {
     type Id: IdIndex<Arena=Self>;
     type Row;
     type Allocator: Allocator<Self>;
