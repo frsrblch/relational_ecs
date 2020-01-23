@@ -18,7 +18,9 @@ impl<ID: Arena, T> Default for Component<ID, T> {
     }
 }
 
-impl<'a, ID: Arena, T> Component<ID, T> {
+impl<'a, ID: Arena, T> Component<ID, T>
+    where <ID::Allocator as Allocator<ID>>::Id: Debug
+{
     pub fn new() -> Self { Default::default() }
 
     pub fn insert(&mut self, id: &<ID::Allocator as Allocator<ID>>::Id, value: T) {
@@ -32,17 +34,20 @@ impl<'a, ID: Arena, T> Component<ID, T> {
     pub fn get(&self, id: &<ID::Allocator as Allocator<ID>>::Id) -> &T {
         self.values
             .get(id.index())
-            .expect(stringify!("no value found for ID: {:?} T: {:?}", id, T))
+            .expect(&format!("No index found for {}, confirm that it Arena::insert is configured properly", std::any::type_name::<(ID, T)>()))
+
     }
 
     pub fn get_mut(&mut self, id: &<ID::Allocator as Allocator<ID>>::Id) -> &mut T {
         self.values
             .get_mut(id.index())
-            .expect(stringify!("no value found for ID: {:?} T: {:?}", id, T))
+            .expect(&format!("No index found for {}, confirm that it Arena::insert is configured properly", std::any::type_name::<(ID, T)>()))
     }
 }
 
-impl<ID: Arena, T> Index<&<ID::Allocator as Allocator<ID>>::Id> for Component<ID, T> {
+impl<ID: Arena, T> Index<&<ID::Allocator as Allocator<ID>>::Id> for Component<ID, T>
+    where <ID::Allocator as Allocator<ID>>::Id: Debug
+{
     type Output = T;
 
     fn index(&self, index: &<ID::Allocator as Allocator<ID>>::Id) -> &Self::Output {
@@ -50,7 +55,9 @@ impl<ID: Arena, T> Index<&<ID::Allocator as Allocator<ID>>::Id> for Component<ID
     }
 }
 
-impl<ID: Arena, T> IndexMut<&<ID::Allocator as Allocator<ID>>::Id> for Component<ID, T> {
+impl<ID: Arena, T> IndexMut<&<ID::Allocator as Allocator<ID>>::Id> for Component<ID, T>
+    where <ID::Allocator as Allocator<ID>>::Id: Debug
+{
     fn index_mut(&mut self, index: &<ID::Allocator as Allocator<ID>>::Id) -> &mut Self::Output {
         self.get_mut(index)
     }
@@ -63,7 +70,7 @@ mod tests {
     use crate::traits_new::Allocator;
     use crate::ids::{Id, GenId, Valid};
 
-    #[derive(Debug)]
+    #[derive(Debug, Default, Clone)]
     struct Fixed;
 
     impl Arena for Fixed {
@@ -76,7 +83,7 @@ mod tests {
         }
     }
 
-    #[derive(Debug)]
+    #[derive(Debug, Default, Clone)]
     struct Gen;
 
     impl Arena for Gen {
@@ -128,5 +135,15 @@ mod tests {
         assert_eq!(id_0_1.id.index, id_0_2.id.id.index); // same index
         assert_ne!(id_0_1.gen, id_0_2.id.gen); // different gen
         assert_eq!(&3, component.get(&id_0_2));
+    }
+
+    #[test]
+    fn panic_text_test() {
+        let mut allocator = FixedAllocator::<Fixed>::default();
+        let component = Component::<Fixed, u32>::default();
+
+        let id = allocator.create();
+
+        let panics = component.get(&id);
     }
 }

@@ -19,12 +19,6 @@ debug = 2
 criterion = "0.3.0"
 
 [[example]]
-name = "simple"
-
-[[example]]
-name = "galaxy"
-
-[[example]]
 name = "generic"
 
 [[bench]]
