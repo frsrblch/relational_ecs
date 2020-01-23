@@ -18,9 +18,7 @@ impl<ID: Arena, T> Default for Component<ID, T> {
     }
 }
 
-impl<'a, ID: Arena, T> Component<ID, T>
-    where <ID::Allocator as Allocator<ID>>::Id: Debug
-{
+impl<'a, ID: Arena, T> Component<ID, T> {
     pub fn new() -> Self { Default::default() }
 
     pub fn insert(&mut self, id: &<ID::Allocator as Allocator<ID>>::Id, value: T) {
@@ -45,9 +43,7 @@ impl<'a, ID: Arena, T> Component<ID, T>
     }
 }
 
-impl<ID: Arena, T> Index<&<ID::Allocator as Allocator<ID>>::Id> for Component<ID, T>
-    where <ID::Allocator as Allocator<ID>>::Id: Debug
-{
+impl<ID: Arena, T> Index<&<ID::Allocator as Allocator<ID>>::Id> for Component<ID, T> {
     type Output = T;
 
     fn index(&self, index: &<ID::Allocator as Allocator<ID>>::Id) -> &Self::Output {
@@ -55,9 +51,7 @@ impl<ID: Arena, T> Index<&<ID::Allocator as Allocator<ID>>::Id> for Component<ID
     }
 }
 
-impl<ID: Arena, T> IndexMut<&<ID::Allocator as Allocator<ID>>::Id> for Component<ID, T>
-    where <ID::Allocator as Allocator<ID>>::Id: Debug
-{
+impl<ID: Arena, T> IndexMut<&<ID::Allocator as Allocator<ID>>::Id> for Component<ID, T> {
     fn index_mut(&mut self, index: &<ID::Allocator as Allocator<ID>>::Id) -> &mut Self::Output {
         self.get_mut(index)
     }
@@ -68,7 +62,7 @@ mod tests {
     use super::*;
     use crate::allocators::{FixedAllocator, GenAllocator};
     use crate::traits_new::Allocator;
-    use crate::ids::{Id, GenId, Valid};
+    use crate::ids::{Id, Valid};
 
     #[derive(Debug, Default, Clone)]
     struct Fixed;
@@ -138,6 +132,7 @@ mod tests {
     }
 
     #[test]
+    #[should_panic]
     fn panic_text_test() {
         let mut allocator = FixedAllocator::<Fixed>::default();
         let component = Component::<Fixed, u32>::default();
