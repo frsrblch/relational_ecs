@@ -27,6 +27,12 @@ impl<T> Allocator<T> for FixedAllocator<T> {
     }
 }
 
+impl<T> FixedAllocator<T> {
+    pub fn ids(&self) -> impl Iterator<Item=&Id<T>> {
+        self.ids.iter()
+    }
+}
+
 #[derive(Debug)]
 pub struct GenAllocator<T> {
     ids: Vec<Valid<T>>,
