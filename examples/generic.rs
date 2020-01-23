@@ -1,4 +1,4 @@
-use relational_ecs::storage::Component;
+use relational_ecs::storage::*;
 use relational_ecs::allocators::*;
 use relational_ecs::traits_new::*;
 use relational_ecs::ids::*;
@@ -21,8 +21,14 @@ fn main() {
             velocity: Velocity(0.0, 29.78e3),
             mass: Mass(5.972e24),
         },
-        surface: None,
-        atmosphere: None
+        surface: SurfaceRow {
+            area: 510.1e6,
+            temperature: 288.0,
+        }.into(),
+        atmosphere: AtmosphereRow {
+            breathable: true,
+            greenhouse_effect: 0.15,
+        }.into(),
     };
     let body = game.construct(planet);
 
@@ -35,7 +41,7 @@ fn main() {
     };
     let colony = state.colony.create(colony, &mut ids.colonies).id();
 
-    dbg!(system, body, colony);
+    dbg!(state);
 }
 
 #[derive(Debug, Default, Clone)]
@@ -106,7 +112,7 @@ pub struct Body {
     pub mass: Component<Self, Mass>,
 
     pub surface: Component<Self, Option<Id<Surface>>>,
-    pub atmosphere: Component<Self, Option<Id<Atmosphere>>>,
+    pub atmosphere: ComponentMap<Self, Id<Atmosphere>>,
 }
 
 impl Arena for Body {
@@ -121,7 +127,6 @@ impl Arena for Body {
         self.mass.insert(id, value.mass);
 
         self.surface.insert(id, None);
-        self.atmosphere.insert(id, None);
     }
 }
 
@@ -237,7 +242,7 @@ impl Link<Body, Surface> for State {
 
 impl Link<Body, Atmosphere> for State {
     fn link(&mut self, a: &Id<Body>, b: &Id<Atmosphere>) {
-        self.body.atmosphere.insert(a, Some(*b));
+        self.body.atmosphere.insert(a, *b);
         self.atmosphere.body.insert(b, *a);
     }
 }
@@ -267,9 +272,9 @@ impl Construct<Body, Planet> for Game {
 
 impl Update<Body> for Position {
     fn update(body: &mut Body) {
-        body.position
+        body.position.values
             .iter_mut()
-            .zip(body.velocity.iter())
+            .zip(&body.velocity.values)
             .for_each(|(p, v)| {
                 p.0 += v.0;
                 p.1 += v.1;
