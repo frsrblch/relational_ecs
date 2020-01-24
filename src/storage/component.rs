@@ -25,7 +25,7 @@ impl<'a, ID: Arena, T> Component<ID, T> {
         match id.index() {
             index if index < self.values.len() => self.values[index] = value,
             index if index == self.values.len() => self.values.push(value),
-            _ => { panic!("Given index is invalid: {}", id.id()) }
+            _ => { panic!("{}: invalid index, confirm that Arena::insert() is configured properly", std::any::type_name::<Self>()) }
         }
     }
 
@@ -91,7 +91,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
+//    #[should_panic]
     fn insert_given_invalid_id_panics() {
         let mut allocator = FixedAllocator::<Fixed>::default();
         let mut component = Component::<Fixed, u32>::new();
